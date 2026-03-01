@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Travel Itineraries</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            text-align: center;
+            padding: 2rem 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            letter-spacing: 1px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .section-title {
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+            margin-top: 2.5rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-top: 4px solid var(--accent-color);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .card-content {
+            padding: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            margin: 0 0 0.5rem 0;
+            color: var(--primary-color);
+        }
+
+        .card-date {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        .card-desc {
+            font-size: 0.95rem;
+            color: #555;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: var(--accent-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        
+        /* Utility tags for trip types */
+        .tag {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            color: white;
+            float: right;
+        }
+        .tag-city { background-color: #9b59b6; }
+        .tag-nature { background-color: #27ae60; }
+        .tag-beach { background-color: #f39c12; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Family Adventures</h1>
+        <p>Our upcoming plans and past memories</p>
+    </header>
+
+    <div class="container">
+        
+        <h2 class="section-title">Upcoming Trips</h2>
+        <div class="grid">
+            <div class="card">
+                <div class="card-content">
+                    <span class="tag tag-city">City</span>
+                    <h3 class="card-title">Chicago Getaway</h3>
+                    <span class="card-date">June 2026</span>
+                    <p class="card-desc">Family trip to the Windy City. Museums, deep dish, and sightseeing around downtown.</p>
+                    <a href="chicago.html" class="btn">View Itinerary</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-content">
+                    <span class="tag tag-city">City & Sea</span>
+                    <h3 class="card-title">Boston</h3>
+                    <span class="card-date">July 16-21, 2026</span>
+                    <p class="card-desc">Five-night stay exploring historic Boston, plus a scheduled whale watching cruise.</p>
+                    <a href="boston.html" class="btn">View Itinerary</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-content">
+                    <span class="tag tag-beach">Island</span>
+                    <h3 class="card-title">Hawaii</h3>
+                    <span class="card-date">Summer 2027</span>
+                    <p class="card-desc">Our upcoming island adventure. Sun, sand, and exploring the tropics.</p>
+                    <a href="hawaii.html" class="btn">View Details</a>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="section-title">Past Adventures</h2>
+        <div class="grid">
+            <div class="card">
+                <div class="card-content">
+                    <span class="tag tag-nature">National Parks</span>
+                    <h3 class="card-title">Southwest Parks</h3>
+                    <span class="card-date">Archived</span>
+                    <p class="card-desc">Our road trip through the Grand Canyon and Zion National Park.</p>
+                    <a href="southwest.html" class="btn">View Details</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

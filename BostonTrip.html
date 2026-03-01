@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boston Trip 2026</title>
+    <style>
+        :root {
+            --primary: #004488; /* Deep Blue for Water/Science */
+            --accent: #d9534f; /* Red for emphasis/Splurges */
+            --light-bg: #f4f8fb;
+            --card-bg: #ffffff;
+            --text: #333;
+            --border: #e1e8ed;
+            --link-color: #0066cc;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--light-bg);
+            margin: 0;
+            padding: 20px;
+        }
+
+        a {
+            color: var(--link-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+
+        h2 {
+            color: var(--primary);
+            margin-top: 30px;
+            font-size: 1.4em;
+        }
+
+        h3 {
+            color: #444;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        /* Reminders Section */
+        .checklist {
+            background-color: #fff8e1; /* Light yellow note look */
+            padding: 15px 20px;
+            border-radius: 6px;
+            border-left: 5px solid #ffc107;
+        }
+        .checklist ul {
+            list-style: none;
+            padding: 0;
+        }
+        .checklist li {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: flex-start;
+        }
+        .checklist input[type="checkbox"] {
+            margin-right: 10px;
+            margin-top: 6px;
+            transform: scale(1.2);
+        }
+
+        /* Logistics Grid */
+        .logistics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: #f9f9f9;
+            border: 1px solid var(--border);
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .highlight-number {
+            font-family: monospace;
+            background: #eef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        /* Day Itinerary */
+        .day-block {
+            border-left: 4px solid var(--primary);
+            padding-left: 20px;
+            margin-bottom: 30px;
+        }
+        .day-header {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        .time-slot {
+            margin-bottom: 12px;
+        }
+        .time {
+            font-weight: bold;
+            color: #666;
+            min-width: 80px;
+            display: inline-block;
+        }
+        
+        /* Splurge Box (Red) */
+        .splurge {
+            background-color: #fff0f0;
+            border: 1px dashed var(--accent);
+            padding: 15px;
+            border-radius: 6px;
+            color: #444; 
+            margin-top: 8px;
+            display: block; 
+        }
+        .splurge-title {
+            color: #c0392b;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #f2d7d5;
+            padding-bottom: 5px;
+        }
+        
+        /* Game Night Box (Green) */
+        .game-night {
+            background-color: #e8f5e9;
+            border: 1px solid #2e7d32;
+            padding: 15px;
+            border-radius: 6px;
+            color: #1b5e20;
+            margin-top: 8px;
+            font-weight: bold;
+        }
+
+        /* Booking Details Box (Blue) */
+        .booking-detail {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 10px;
+            margin-top: 5px;
+            font-size: 0.9em;
+            color: #0d47a1;
+        }
+        
+        /* Ghost Tour Box (Purple) */
+        .ghost-tour {
+            background-color: #f3e5f5;
+            border: 1px solid #7b1fa2;
+            padding: 15px;
+            border-radius: 6px;
+            color: #4a148c;
+            margin-top: 8px;
+        }
+
+        .option-block {
+            margin-bottom: 8px;
+        }
+
+        /* Print Styles */
+        @media print {
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; padding: 0; max-width: 100%; }
+            .checklist { border: 1px solid #ddd; background: #fff; }
+            .splurge { border: 1px solid #ccc; color: #000; background-color: #fafafa; }
+            .game-night { border: 1px solid #000; color: #000; background-color: #fafafa; }
+            .booking-detail { border: 1px solid #ccc; color: #000; }
+            .ghost-tour { border: 1px solid #ccc; color: #000; }
+            h1 { font-size: 18pt; }
+            h2 { font-size: 14pt; margin-top: 20px; }
+            a { text-decoration: none; color: #000; } 
+            .day-block { break-inside: avoid; border-left: 2px solid #000; }
+            input[type="checkbox"] { -webkit-appearance: none; border: 1px solid #000; width: 12px; height: 12px; }
+        }
+
+        @media (max-width: 600px) {
+            .logistics-grid { grid-template-columns: 1fr; }
+            .container { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🇺🇸 Boston: Science, Sweets & History</h1>
+    <div class="header-info">
+        <span>Travelers: Mike, Caron, Johnathan</span>
+        <span>Dates: July 16 – July 21, 2026</span>
+    </div>
+
+    <section class="checklist">
+        <h3>✅ Pre-Trip To-Do List</h3>
+        <ul>
+            <li><input type="checkbox"> <strong>IMMEDIATELY:</strong> Buy <a href="https://www.mlb.com/redsox/tickets" target="_blank">Red Sox Tickets</a> for Friday, July 17 (7:10 PM).</li>
+            <li><input type="checkbox" checked> <strong>DONE:</strong> Whale Watch Tickets Purchased.</li>
+            <li><input type="checkbox"> <strong>May 2026:</strong> Check <a href="https://www.gardnermuseum.org/calendar" target="_blank">Gardner Museum calendar</a> for "Thursday Night" music.</li>
+            <li><input type="checkbox"> <strong>May 2026:</strong> Book <a href="https://www.ghostsandgravestones.com/boston/ghost-walking-tour-tickets" target="_blank">Ghosts & Gravestones Walking Tour</a> for Sunday Night.</li>
+            <li><input type="checkbox"> <strong>June 16, 2026:</strong> Book dinner reservations (<a href="https://www.chart-house.com/location/chart-house-boston-ma/" target="_blank">Chart House</a> or <a href="https://www.carmelinasboston.com/" target="_blank">Carmelina’s</a>).</li>
+            <li><input type="checkbox"> <strong>June 2026:</strong> Book <a href="https://feverup.com/en/boston/candlelight" target="_blank">"Candlelight Concert" tickets</a> (Fever).</li>
+            <li><input type="checkbox"> <strong>PACKING:</strong> Bring Washington Pavilion Membership Card (ASTC Logo).</li>
+            <li><input type="checkbox"> <strong>PACKING:</strong> Motion sickness meds & sweatshirts for Whale Watch.</li>
+            <li><input type="checkbox"> <strong>APP:</strong> Download <a href="https://www.mbta.com/fares/mobile-pay" target="_blank">MBTA mTicket</a> for subway passes.</li>
+        </ul>
+    </section>
+
+    <h2>✈️ Logistics</h2>
+    <div class="logistics-grid">
+        <div class="card">
+            <h3>Flights (<a href="https://suncountry.com/" target="_blank">Sun Country</a>)</h3>
+            <p><strong>Outbound:</strong> Thu, July 16<br>
+            SY251 | MSP 6:55 AM → BOS 10:38 AM<br>
+            Seats: <span class="highlight-number">13 A, B, C</span></p>
+            <p><strong>Return:</strong> Tue, July 21<br>
+            SY252 | BOS 11:40 AM → MSP 1:49 PM<br>
+            Seats: <span class="highlight-number">13 A, B, C</span></p>
+            <p class="tip">Includes 1 Checked Bag + 1 Under-seat item per person.</p>
+        </div>
+        <div class="card">
+            <h3>Hotel (Homewood Suites)</h3>
+            <p><strong><a href="https://www.hilton.com/en/hotels/bossehw-homewood-suites-boston-seaport-district/" target="_blank">Homewood Suites Seaport District</a></strong><br>
+            670 Summer Street, Boston, MA<br>
+            Conf: <span class="highlight-number">#54618362</span></p>
+            <p><strong>Room:</strong> 1-Bedroom Suite (2 Queens) + Kitchen<br>
+            <strong>Check-in:</strong> 3:00 PM | <strong>Check-out:</strong> 11:00 AM</p>
+            <p class="tip">Free Hot Breakfast Daily</p>
+        </div>
+    </div>
+
+    <h2>🗓️ Daily Itinerary</h2>
+
+    <div class="day-block">
+        <div class="day-header">Day 1: Thursday, July 16 — Arrival & Stocking Up</div>
+        <div class="time-slot"><span class="time">10:38 AM</span> Land at Logan. Uber to Hotel (~15 min). Drop bags at desk.</div>
+        <div class="time-slot"><span class="time">12:30 PM</span> <strong>Lunch:</strong> Walk to <a href="https://bartaco.com/location/seaport/" target="_blank">Bartaco</a> or <a href="https://shakeshack.com/" target="_blank">Shake Shack</a> (Seaport).</div>
+        <div class="time-slot"><span class="time">2:30 PM</span> <strong><a href="https://www.neaq.org/" target="_blank">New England Aquarium</a>:</strong> See the Giant Ocean Tank & Octopus.</div>
+        <div class="time-slot"><span class="time">4:30 PM</span> <strong>Grocery Run:</strong> <a href="https://locations.traderjoes.com/ma/boston/542/" target="_blank">Trader Joe’s</a> (44 Thomson Pl). Buy water, snacks, lunch meat, frozen dinners.</div>
+        <div class="time-slot"><span class="time">6:00 PM</span> <strong>Dinner:</strong> In-Suite. Relax and unpack.</div>
+        <div class="time-slot">
+            <div class="splurge">
+                <span class="splurge-title">🍪 Dessert Splurge #1: You Decide!</span>
+                <div class="option-block">
+                    <strong>Option A:</strong> <a href="https://levainbakery.com/" target="_blank">Levain Bakery</a><br>
+                    <em>The massive, gooey Chocolate Chip Walnut Cookie. (Seaport)</em>
+                </div>
+                <div class="option-block">
+                    <strong>Option B:</strong> <a href="https://jplicks.com/" target="_blank">J.P. Licks</a><br>
+                    <em>Boston's favorite local ice cream. Lighter and cooler. (Seaport)</em>
+                </div>
+            </div>
+        </div>
+        <div class="time-slot"><span class="time">8:30 PM</span> <strong><a href="https://www.gardnermuseum.org/" target="_blank">Gardner Museum</a>:</strong> Open late (until 9pm). Check for courtyard music.</div>
+    </div>
+
+    <div class="day-block">
+        <div class="day-header">Day 2: Friday, July 17 — Hard Science & Red Sox</div>
+        <div class="time-slot"><span class="time">09:30 AM</span> Uber to Museum of Science.</div>
+        <div class="time-slot"><span class="time">10:00 AM</span> <strong><a href="https://www.mos.org/" target="_blank">Museum of Science</a>:</strong> Use ASTC Card for free entry. <br><span class="tip">Tip: Pack lunch to save money. See the "Theater of Electricity" show.</span></div>
+        <div class="time-slot"><span class="time">3:00 PM</span> <strong>North End History Walk:</strong> Old North Church & Paul Revere Statue.</div>
+        <div class="time-slot">
+            <div class="splurge">
+                <span class="splurge-title">🍰 Dessert Splurge #2: The Cannoli Wars</span>
+                <div class="option-block">
+                    <strong>Option A:</strong> <a href="https://www.mikespastry.com/" target="_blank">Mike’s Pastry</a> (The Famous One)<br>
+                </div>
+                <div class="option-block">
+                    <strong>Option B:</strong> <a href="https://modernpastry.com/" target="_blank">Modern Pastry</a> (The Authentic One)<br>
+                    <em>Grab one of each and eat them on the Rose Kennedy Greenway lawn.</em>
+                </div>
+            </div>
+        </div>
+        <div class="time-slot">
+            <div class="game-night">
+                ⚾ EVENT: Red Sox Game @ Fenway Park<br>
+                <span style="font-weight:normal; color:#333;">Game Start: 7:10 PM. Dinner: Fenway Franks & Stadium Food.</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="day-block">
+        <div class="day-header">Day 3: Saturday, July 18 — Whales & Waffles</div>
+        <div class="time-slot"><span class="time">08:45 AM</span> <strong>Transport to Whale Watch:</strong>
+            <br><em>Option A (Recommended):</em> Uber/Lyft (~10 mins) to <strong>1 Long Wharf</strong>.
+            <br><em>Option B:</em> Walk (~25 mins) along the Harborwalk.
+        </div>
+        <div class="time-slot"><span class="time">09:30 AM</span> <strong>Boarding Begins:</strong> Gate 1 - Central Wharf.
+            <div class="booking-detail">
+                <strong>Vessel:</strong> Asteria<br>
+                <strong>Conf #:</strong> i71511149 / 71511146<br>
+                <strong>Note:</strong> Bring sweatshirt & motion sickness meds.
+            </div>
+        </div>
+        <div class="time-slot"><span class="time">10:00 AM</span> <strong>Whale Watch Cruise:</strong> Depart. (Returns 2:00 PM). <br><span class="tip">Tip: Pack a cooler lunch for the boat.</span></div>
+        <div class="time-slot"><span class="time">2:30 PM</span> <strong><a href="https://www.thefreedomtrail.org/" target="_blank">Freedom Trail</a> (Downtown):</strong> Faneuil Hall, Old State House, Granary Burying Ground.</div>
+        <div class="time-slot">
+            <div class="splurge">
+                <span class="splurge-title">🍩 Dessert Splurge #3: You Decide!</span>
+                <div class="option-block">
+                    <strong>Option A:</strong> <a href="https://taiyakinyc.com/" target="_blank">Taiyaki NYC</a><br>
+                    <em>Fun Japanese fish-shaped waffle cones with soft serve. (Seaport)</em>
+                </div>
+                <div class="option-block">
+                    <strong>Option B:</strong> <a href="https://www.omnihotels.com/hotels/boston-parker-house/dining" target="_blank">Boston Cream Pie</a><br>
+                    <em>Eat the original at Omni Parker House, right on the Freedom Trail. (Downtown)</em>
+                </div>
+            </div>
+        </div>
+        <div class="time-slot"><span class="time">Evening</span> <strong><a href="https://feverup.com/en/boston/candlelight" target="_blank">Candlelight Concert</a>:</strong> String quartet in a historic venue (check Fever app).</div>
+        <div class="time-slot"><span class="time">Dinner</span> <a href="https://www.chart-house.com/location/chart-house-boston-ma/" target="_blank">Chart House</a> (Steak/Prime Rib) or The Black Rose.</div>
+    </div>
+
+    <div class="day-block">
+        <div class="day-header">Day 4: Sunday, July 19 — Cambridge Brains & Ghosts</div>
+        <div class="time-slot"><span class="time">10:30 AM</span> <strong><a href="https://mitmuseum.mit.edu/" target="_blank">MIT Museum</a>:</strong> Focus on Robotics, AI, and Holography.</div>
+        <div class="time-slot"><span class="time">1:00 PM</span> <strong>Lunch:</strong> <a href="https://www.areafour.com/" target="_blank">Area Four</a> (Pizza) or <a href="https://www.mrbartley.com/" target="_blank">Mr. Bartley’s</a> (Burgers).</div>
+        <div class="time-slot"><span class="time">2:30 PM</span> <strong>Harvard Square:</strong> <a href="https://hmnh.harvard.edu/" target="_blank">Harvard Museum of Natural History</a> (Glass Flowers) & The Coop.</div>
+        <div class="time-slot">
+            <div class="splurge">
+                <span class="splurge-title">🏆 Dessert Splurge #4: You Decide!</span>
+                <div class="option-block">
+                    <strong>Option A:</strong> <a href="https://www.tosci.com/" target="_blank">Toscanini’s Ice Cream</a><br>
+                    <em>"The World's Best Ice Cream" (Famous for B3 flavor). Near MIT.</em>
+                </div>
+                <div class="option-block">
+                    <strong>Option B:</strong> <a href="https://www.burdickchocolate.com/" target="_blank">L.A. Burdick</a><br>
+                    <em>Famous Drinking Chocolate (melted chocolate shavings). Harvard Sq.</em>
+                </div>
+            </div>
+        </div>
+        <div class="time-slot"><span class="time">6:00 PM</span> <strong>Dinner In-Suite:</strong> Cook meal in suite before tour.</div>
+        <div class="time-slot">
+            <div class="ghost-tour">
+                👻 EVENT: Ghosts & Gravestones Walking Tour<br>
+                <span style="font-weight:normal; color:#333;">
+                <strong>Departure:</strong> The Boston Massacre Memorial (206 Washington St).<br>
+                <strong>Time:</strong> Evening (Check Ticket). <strong>Duration:</strong> 90 Mins (Walking).<br>
+                <em>Rated PG-13. Visit two burial grounds and hear true crime/morbid tales.</em>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="day-block">
+        <div class="day-header">Day 5: Monday, July 20 — Naval History & Farewell</div>
+        <div class="time-slot"><span class="time">10:00 AM</span> <strong><a href="https://ussconstitutionmuseum.org/" target="_blank">USS Constitution</a>:</strong> Take Charlestown Ferry. Tour "Old Ironsides."</div>
+        <div class="time-slot"><span class="time">12:30 PM</span> <strong>Lunch:</strong> <a href="https://brewersfork.com/" target="_blank">Brewer’s Fork</a> (Charlestown). Wood-fired pizza/sandwiches.</div>
+        <div class="time-slot"><span class="time">2:30 PM</span> <strong>Seaport Fun:</strong> <a href="https://www.puttshack.com/locations/boston" target="_blank">Puttshack</a> (Tech Mini Golf) or walk Harborwalk.</div>
+        <div class="time-slot"><span class="time">Dinner</span> <strong>Farewell:</strong> <a href="https://viewboston.com/" target="_blank">View Boston</a> (Prudential Center) for sunset views OR <em>Shake Shack</em> on the Seaport steps.</div>
+    </div>
+
+    <div class="day-block">
+        <div class="day-header">Day 6: Tuesday, July 21 — Departure</div>
+        <div class="time-slot"><span class="time">09:00 AM</span> Breakfast & Checkout.</div>
+        <div class="time-slot"><span class="time">09:30 AM</span> Uber to Logan Airport (Terminal B).</div>
+        <div class="time-slot"><span class="time">11:40 AM</span> Fly Home (SY252).</div>
+    </div>
+
+</div>
+
+</body>
+</html>
