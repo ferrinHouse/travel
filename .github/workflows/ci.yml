@@ -23,5 +23,5 @@ jobs:
             # This ensures any changes to your YAML are live immediately
             - name: Apply Kubernetes Manifests
               run: |
-                  kubectl apply -f family-travel.yaml
+                  kubectl apply -f familyTravel.yaml
                   echo "Kubernetes configuration updated."
