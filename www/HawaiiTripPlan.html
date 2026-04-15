@@ -5,23 +5,120 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hawaii 2027: Family Adventure Plan</title>
-    <link rel="stylesheet" href="shared.css">
     <style>
-        /* Hawaii Specific Styles */
         :root {
             --primary: #2c7a7b;
             /* Teal */
             --secondary: #ed8936;
             /* Orange */
+            --light: #f7fafc;
+            --text: #2d3748;
             --accent: #2b6cb0;
         }
 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fcfcfc;
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--primary);
+        }
+
+        h1 {
+            text-align: center;
+            border-bottom: 3px solid var(--secondary);
+            padding-bottom: 15px;
+        }
+
+        .header-summary {
+            background-color: var(--light);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid var(--secondary);
+            margin-bottom: 20px;
+        }
+
+        .flight-section {
+            background-color: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .flight-section h3 {
+            margin-top: 0;
+            color: #166534;
+            border-bottom: 2px solid #86efac;
+            padding-bottom: 5px;
+        }
+
+        .todo-section {
+            background-color: #ebf4ff;
+            border: 1px solid #c3dafe;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .todo-section h3 {
+            margin-top: 0;
+            color: var(--accent);
+            border-bottom: 2px solid #a3bffa;
+            padding-bottom: 5px;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .todo-checkbox {
+            margin-top: 5px;
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+
+        .day-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #edf2f7;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
         .day-title {
+            font-size: 1.4em;
+            font-weight: bold;
             color: var(--accent);
         }
 
         .tag {
             background: var(--secondary);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: bold;
         }
 
         .section-title {
@@ -30,6 +127,23 @@
             color: #4a5568;
             text-transform: uppercase;
             font-size: 0.9em;
+        }
+
+        ul {
+            margin-top: 5px;
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+
+        .option-box {
+            background-color: #f0fff4;
+            border: 1px solid #c6f6d5;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
         }
 
         .option-title {
@@ -48,9 +162,28 @@
             font-size: 0.95em;
         }
 
+        .treat-box {
+            background-color: #ebf8ff;
+            border: 1px solid #bee3f8;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+        }
+
         .treat-icon {
             font-size: 1.5em;
             margin-right: 10px;
+        }
+
+        .shopping-list {
+            background-color: #fff5f5;
+            border: 1px solid #fed7d7;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            margin-bottom: 30px;
         }
 
         .link-btn {
@@ -69,6 +202,29 @@
             background-color: #234e52;
         }
 
+        .inline-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .inline-link:hover {
+            text-decoration: underline;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th,
+        td {
+            border: 1px solid #e2e8f0;
+            padding: 8px;
+            text-align: left;
+        }
+
         th {
             background-color: #f7fafc;
         }
@@ -81,290 +237,218 @@
 
     <div class="header-summary">
         <p><strong>Travelers:</strong> Family of 6 (Kids: 16, 13, 10, 7)<br>
-            <strong>Theme:</strong> "Grocery-First" Adventure with Bonus Options<br>
-            <strong>Strategy:</strong> Mix of free culture, nature, and targeted paid activities.<br>
+            <strong>Dates:</strong> February 9 - February 19, 2027 (10 Days / 9 Nights)<br>
+            <strong>Itinerary Flow:</strong> Oahu (5 Nights) → Big Island (4 Nights)<br>
+            <strong>Strategy:</strong> "Grocery-First", Mix of free culture & nature.<br>
             <strong>Estimated Budget:</strong> $14,000 – $17,500
         </p>
     </div>
 
-    <h2>🌋 PART 1: BIG ISLAND (The Road Trip)</h2>
-    <p><em>Transport: Rental Minivan required. Stay: Waikoloa/Kohala Coast Condo.</em></p>
+    <div class="flight-section">
+        <h3>✈️ Confirmed Flight Details (American Airlines - NYMQBM)</h3>
+        <ul>
+            <li><strong>Outbound (Feb 9):</strong> MSP (6:32 AM) → DFW (9:38 AM) | DFW (11:20 AM) → HNL (3:55 PM)
+                <em>(AA 3012 / AA 5)</em>
+            </li>
+            <li><strong>Island Hop (Feb 14):</strong> HNL (1:18 PM) → KOA (2:06 PM) <em>(AA 7887 / Operated by Hawaiian
+                    Airlines)</em></li>
+            <li><strong>Return (Feb 18):</strong> KOA (10:30 PM) → PHX (7:19 AM next day) | PHX (9:40 AM) → MSP (1:46 PM
+                on Feb 19) <em>(AA 664 / AA 1743)</em></li>
+        </ul>
+    </div>
 
-    <div class="day-card">
-        <div class="day-header">
-            <span class="day-title">Day 1: Landing & Logistics</span>
-            <span class="tag">Arrival</span>
+    <div class="todo-section">
+        <h3>📋 Trip Planning Master Checklist</h3>
+
+        <div class="todo-item">
+            <input type="checkbox" class="todo-checkbox" checked disabled>
+            <div><del><strong>9–12 Months Out: Book Flights</strong></del><br>
+                <em>Done! Flights secured for Feb 9-19, 2027.</em>
+            </div>
         </div>
-        <div class="section-title">📅 The Plan</div>
-        <ul>
-            <li>Land at KOA Airport. Pick up Minivan.</li>
-            <li><strong>Immediate Stop:</strong> Costco Kona (Near Airport).</li>
-            <li>Check into Condo (Waikoloa).</li>
-            <li>Sunset swim at <strong>Anaehoʻomalu Bay (A-Bay)</strong>.</li>
-            <li>Dinner: "Arrival Feast" at condo.</li>
-        </ul>
-        <div class="section-title">🍳 Menu</div>
-        <ul>
-            <li><strong>Dinner:</strong> Rotisserie Chicken, Bagged Caesar Salad, Rice, Pineapple.</li>
-        </ul>
-        <div class="treat-box">
-            <span class="treat-icon">🍦</span>
-            <div><strong>Daily Treat:</strong> <em>Tropical Dreams Ice Cream</em> (Buy a pint at the grocery store).
+
+        <div class="todo-item">
+            <input type="checkbox" class="todo-checkbox">
+            <div><strong>By June 2026: Secure Condos</strong><br>
+                Book a legal Waikiki resort condo (like the <a
+                    href="https://www.vrbo.com/search?q=Waikiki%20Sunset%2C%20Honolulu%2C%20HI%2C%20USA" target="_blank"
+                    class="inline-link">Waikiki Sunset</a>) for Feb 9-14 and a Waikoloa condo for Feb 14-18.</div>
+        </div>
+
+        <div class="todo-item">
+            <input type="checkbox" class="todo-checkbox">
+            <div><strong>By August 2026: Reserve Rental Cars</strong><br>
+                Book your minivan for Oahu (just 1 day, Feb 11) and the Big Island (Feb 14-18). <em>Tip: <a
+                        href="https://www.discounthawaiicarrental.com/" target="_blank" class="inline-link">Discount
+                        Hawaii Car Rental</a> is often the cheapest aggregator.</em></div>
+        </div>
+
+        <div class="todo-item">
+            <input type="checkbox" class="todo-checkbox">
+            <div><strong>November 2026: Pre-Flight Logistics</strong><br>
+                Plan the drive to Minneapolis and book <a href="https://www.mspairport.com/parking" target="_blank"
+                    class="inline-link">MSP Airport Parking</a> or a hotel.</div>
+        </div>
+
+        <div class="todo-item">
+            <input type="checkbox" class="todo-checkbox">
+            <div><strong>December 2026: Core Reservations</strong><br>
+                Exactly 8 weeks out (Dec 16), book your free <a href="https://www.recreation.gov/ticket/facility/233338"
+                    target="_blank" class="inline-link">USS Arizona Memorial Tickets</a>. Exactly 30 days out (Jan 10),
+                book your <a href="https://gostateparks.hawaii.gov/diamondhead" target="_blank"
+                    class="inline-link">Diamond Head pass</a>.</div>
+        </div>
+
+        <div class="todo-item">
+            <input type="checkbox" class="todo-checkbox">
+            <div><strong>1 Week Out: Download Apps</strong><br>
+                Download <a href="https://www.instacart.com/" target="_blank" class="inline-link">Instacart</a>, <a
+                    href="https://www.uber.com/" target="_blank" class="inline-link">Uber</a>, and the <a
+                    href="https://www.thebus.org/App/AppInfo.asp" target="_blank" class="inline-link">DaBus2 App</a>.
             </div>
         </div>
     </div>
 
-    <div class="day-card">
-        <div class="day-header">
-            <span class="day-title">Day 2: Volcanoes National Park</span>
-            <span class="tag">National Park</span>
-        </div>
-        <div class="section-title">📅 The Plan</div>
-        <ul>
-            <li>Early start (7:30 AM). Drive Saddle Road to Hilo side.</li>
-            <li><strong>Hike:</strong> Kīlauea Iki Trail.</li>
-            <li><strong>Walk:</strong> Thurston Lava Tube.</li>
-        </ul>
-        <div class="section-title">🍳 Menu</div>
-        <ul>
-            <li><strong>Lunch (Packed):</strong> Sandwiches (Steam Vents picnic area).</li>
-            <li><strong>Dinner (Cheap Eats):</strong> Cafe 100 in Hilo.</li>
-        </ul>
-        <div class="treat-box">
-            <span class="treat-icon">🍪</span>
-            <div><strong>Daily Treat:</strong> <em>Big Island Candies</em>.</div>
-        </div>
-    </div>
-
-    <div class="day-card">
-        <div class="day-header">
-            <span class="day-title">Day 3: Best Beach & Stargazing</span>
-            <span class="tag">Relax + Space</span>
-        </div>
-        <div class="section-title">📅 The Plan</div>
-        <ul>
-            <li>Morning: <strong>Hapuna Beach State Park</strong>.</li>
-            <li>Evening: <strong>Mauna Kea Visitor Center</strong> (Stargazing).</li>
-        </ul>
-        <div class="section-title">🍳 Menu</div>
-        <ul>
-            <li><strong>Lunch (Packed):</strong> Wraps & Chips (at Beach).</li>
-            <li><strong>Dinner (Condo):</strong> Leftover Rotisserie Chicken Fried Rice.</li>
-        </ul>
-        <div class="treat-box">
-            <span class="treat-icon">🍧</span>
-            <div><strong>Daily Treat:</strong> <em>Original Big Island Shave Ice Co.</em></div>
-        </div>
-    </div>
-
-    <div class="day-card">
-        <div class="day-header">
-            <span class="day-title">Day 4: History & North Tip</span>
-            <span class="tag">Culture + Adventure</span>
-        </div>
-        <div class="section-title">📅 The Plan</div>
-
-        <div class="bonus-stop">
-            <strong>🏛️ Added Stop: Puʻukoholā Heiau NHS</strong><br>
-            Stop here first (it's on the way North). <br>
-            <em>Time: 45 mins. Cost: Free.</em>
-        </div>
-
-        <p><em>Then, continue North to your Adventure Choice:</em></p>
-
-        <div class="option-box">
-            <div class="option-title">Option A: Ziplining (Kohala)</div>
-            <ul>
-                <li><strong>Best for:</strong> Adrenaline lovers.</li>
-                <li><strong>Cost:</strong> Approx $200/person.</li>
-            </ul>
-        </div>
-
-        <div class="option-box">
-            <div class="option-title">Option B: Pololū Valley Hike</div>
-            <ul>
-                <li><strong>Best for:</strong> Nature lovers & Budget saving.</li>
-                <li><strong>Activity:</strong> Hike to black sand beach.</li>
-            </ul>
-        </div>
-
-        <div class="section-title">🍳 Menu</div>
-        <ul>
-            <li><strong>Lunch (Packed):</strong> Picnic at the beach.</li>
-            <li><strong>Dinner (Condo):</strong> Taco Night!</li>
-        </ul>
-        <div class="treat-box">
-            <span class="treat-icon">🍩</span>
-            <div><strong>Daily Treat:</strong> <em>Tex Drive-In</em> (Malasadas).</div>
-        </div>
-    </div>
-
-    <div class="shopping-list">
-        <h3>🛒 Big Island Costco List (Day 1 - Kona)</h3>
-        <table>
-            <tr>
-                <th colspan="2" style="background-color: #e2e8f0; font-weight: bold;">Main Meals</th>
-            </tr>
-            <tr>
-                <td>2 Rotisserie Chickens</td>
-                <td>Dinner Day 1 + Leftovers for Day 3 Fried Rice.</td>
-            </tr>
-            <tr>
-                <td>Ground Beef (3-4 lbs)</td>
-                <td>For Taco Night (Day 4).</td>
-            </tr>
-            <tr>
-                <td>Bagged Salads (2 big kits)</td>
-                <td>Vegetable side for chicken.</td>
-            </tr>
-            <tr>
-                <td>Rice (5lb bag)</td>
-                <td>Dinner Day 1 + Fried Rice Day 3.</td>
-            </tr>
-            <tr>
-                <td>Taco Shells / Tortillas</td>
-                <td>Taco Night.</td>
-            </tr>
-
-            <tr>
-                <th colspan="2" style="background-color: #e2e8f0; font-weight: bold;">Breakfast & Lunch</th>
-            </tr>
-            <tr>
-                <td>Eggs (24 pack) & Bacon</td>
-                <td>Hearty breakfasts.</td>
-            </tr>
-            <tr>
-                <td>Bagels / Bread (2 packs)</td>
-                <td>Breakfasts & Sandwiches.</td>
-            </tr>
-            <tr>
-                <td>Deli Meat & Cheese</td>
-                <td>Sandwiches for 4 days.</td>
-            </tr>
-            <tr>
-                <td>Tropical Fruit</td>
-                <td>Pineapple/Papaya.</td>
-            </tr>
-
-            <tr>
-                <th colspan="2" style="background-color: #e2e8f0; font-weight: bold;">Pantry & Essentials (Don't
-                    Forget!)</th>
-            </tr>
-            <tr>
-                <td><strong>Cooking Oil / Butter</strong></td>
-                <td>Required for eggs, frying rice, and browning meat!</td>
-            </tr>
-            <tr>
-                <td><strong>Mayonnaise / Mustard</strong></td>
-                <td>Sandwiches are dry without these.</td>
-            </tr>
-            <tr>
-                <td><strong>Soy Sauce (Aloha Shoyu)</strong></td>
-                <td>Essential for the Day 3 Fried Rice.</td>
-            </tr>
-            <tr>
-                <td><strong>Coffee & Creamer</strong></td>
-                <td>Rental condos often provide terrible coffee.</td>
-            </tr>
-            <tr>
-                <td><strong>Ziploc Bags (Variety Pack)</strong></td>
-                <td>Mandatory for packing lunches/snacks.</td>
-            </tr>
-            <tr>
-                <td>Case of Water</td>
-                <td>Refill bottles for hiking.</td>
-            </tr>
-        </table>
-    </div>
-
     <hr>
 
-    <h2>🌴 PART 2: OAHU (City & Surf)</h2>
+    <h2>🌴 PART 1: OAHU (City & Surf)</h2>
     <p><em>Transport: Uber/Bus + 1 Day Rental. Stay: Waikiki Condo.</em></p>
 
     <div class="day-card">
         <div class="day-header">
-            <span class="day-title">Day 5: Transfer & Waikiki</span>
-            <span class="tag">City Life</span>
+            <span class="day-title">Day 1 (Feb 9): Landing & Waikiki</span>
+            <span class="tag">Arrival</span>
         </div>
+        <div class="section-title">📅 The Plan</div>
+        <ul>
+            <li>Arrive in Honolulu (HNL) at 3:55 PM. UberXL to Condo.</li>
+            <li>Walk Waikiki Strip. Take a photo with the Duke Kahanamoku statue.</li>
+            <li>Grocery Run (<a href="https://local.safeway.com/safeway/hi/honolulu/888-kapahulu-ave.html"
+                    target="_blank" class="inline-link">Safeway Kapahulu</a> or Instacart delivery).</li>
+        </ul>
         <div class="section-title">🍳 Menu</div>
         <ul>
-            <li><strong>Dinner:</strong> Marukame Udon (Eating Out).</li>
+            <li><strong>Dinner (The Big Meal Out):</strong> <a href="https://www.marugameudon.com/" target="_blank"
+                    class="inline-link">Marukame Udon</a> (Handmade noodles, very affordable).</li>
         </ul>
         <div class="treat-box">
             <span class="treat-icon">🍍</span>
-            <div><strong>Daily Treat:</strong> <em>Dole Whip</em> (Royal Hawaiian Center).</div>
+            <div><strong>Daily Treat:</strong> <em>Dole Whip</em> at <a href="https://www.islandvintageshaveice.com/"
+                    target="_blank" class="inline-link">Island Vintage Shave Ice</a>.</div>
         </div>
     </div>
 
     <div class="day-card">
         <div class="day-header">
-            <span class="day-title">Day 6: Pearl Harbor</span>
+            <span class="day-title">Day 2 (Feb 10): Pearl Harbor</span>
             <span class="tag">History</span>
         </div>
         <div class="section-title">📅 The Plan</div>
         <ul>
+            <li>Take <a href="https://www.thebus.org/" target="_blank" class="inline-link">TheBus (#20 or #42)</a> to
+                Pearl Harbor.</li>
             <li><strong>Core:</strong> USS Arizona Memorial.</li>
-            <li><strong>Bonus:</strong> Battleship Missouri ($$).</li>
-            <li><strong>Evening:</strong> Free Hula Show at Kūhiō Beach.</li>
+            <li><strong>Bonus:</strong> <a href="https://ussmissouri.org/" target="_blank"
+                    class="inline-link">Battleship Missouri</a> tickets for history buffs ($$).</li>
+            <li><strong>Evening:</strong> <a href="https://www.kuhiobeachhulahow.com/" target="_blank"
+                    class="inline-link">Free Hula Show at Kūhiō Beach</a> at sunset.</li>
         </ul>
         <div class="section-title">🍳 Menu</div>
         <ul>
-            <li><strong>Lunch:</strong> Packed Snacks/Sandwiches.</li>
+            <li><strong>Lunch:</strong> Packed Snacks/Sandwiches (eat on the lawn outside the gates).</li>
             <li><strong>Dinner (Condo):</strong> Spaghetti Night.</li>
         </ul>
         <div class="treat-box">
             <span class="treat-icon">🥞</span>
-            <div><strong>Daily Treat:</strong> <em>Leonard's Bakery Malasadas</em>.</div>
+            <div><strong>Daily Treat:</strong> <a href="https://www.leonardshawaii.com/" target="_blank"
+                    class="inline-link">Leonard's Bakery Malasadas</a>.</div>
         </div>
+        <a href="https://www.recreation.gov/ticket/facility/233338" target="_blank" class="link-btn">Book Arizona
+            Tickets ($1 fee)</a>
     </div>
 
     <div class="day-card">
         <div class="day-header">
-            <span class="day-title">Day 7: North Shore Loop</span>
+            <span class="day-title">Day 3 (Feb 11): North Shore Loop</span>
             <span class="tag">1-Day Car Rental</span>
         </div>
         <div class="section-title">📅 The Plan</div>
         <ul>
-            <li><strong>Morning Option:</strong> Shark's Cove (Snorkel) OR Waimea Valley (Walk).</li>
-            <li><strong>Afternoon:</strong> Dole Plantation.</li>
-            <li><strong>Scenic Drive:</strong> Optional return via East Coast (Blowhole).</li>
+            <li><strong>Morning Option:</strong> Shark’s Cove (Snorkel) OR <a href="https://www.waimeavalley.net/"
+                    target="_blank" class="inline-link">Waimea Valley Botanical Garden</a> (Walk/Swim).</li>
+            <li><strong>Lunch:</strong> North Shore Food Trucks (e.g., <a href="https://giovannisshrimptruck.com/"
+                    target="_blank" class="inline-link">Giovanni's Shrimp</a>).</li>
+            <li><strong>Afternoon:</strong> <a href="https://www.doleplantation.com/" target="_blank"
+                    class="inline-link">Dole Plantation</a> Maze & Train.</li>
+            <li><strong>Scenic Drive:</strong> Optional return via East Coast to see the Halona Blowhole.</li>
         </ul>
         <div class="section-title">🍳 Menu</div>
         <ul>
             <li><strong>Lunch:</strong> Food Trucks (Eating Out).</li>
-            <li><strong>Dinner:</strong> Leftovers.</li>
+            <li><strong>Dinner:</strong> Leftovers at the condo.</li>
         </ul>
         <div class="treat-box">
             <span class="treat-icon">🍧</span>
-            <div><strong>Daily Treat:</strong> <em>Matsumoto Shave Ice</em>.</div>
+            <div><strong>Daily Treat:</strong> <a href="https://matsumotoshaveice.com/" target="_blank"
+                    class="inline-link">Matsumoto Shave Ice</a> in Haleiwa.</div>
         </div>
     </div>
 
     <div class="day-card">
         <div class="day-header">
-            <span class="day-title">Day 8: Hike & Fly</span>
-            <span class="tag">Departure</span>
+            <span class="day-title">Day 4 (Feb 12): Hike & Relax</span>
+            <span class="tag">Nature</span>
         </div>
         <div class="section-title">📅 The Plan</div>
         <ul>
-            <li>Hike Diamond Head. Final swim. Fly home.</li>
+            <li>Hike Diamond Head early morning.</li>
+            <li>Afternoon beach swim in Waikiki.</li>
+        </ul>
+        <div class="section-title">🍳 Menu</div>
+        <ul>
+            <li><strong>Lunch:</strong> Sandwiches at the beach.</li>
+            <li><strong>Dinner (Condo):</strong> Taco Night!</li>
+        </ul>
+        <div class="treat-box">
+            <span class="treat-icon">☕</span>
+            <div><strong>Daily Treat:</strong> <a href="https://kaicoffeehawaii.com/" target="_blank"
+                    class="inline-link">Kai Coffee</a> (Macadamia Nut Latte).</div>
+        </div>
+        <a href="https://gostateparks.hawaii.gov/diamondhead" target="_blank" class="link-btn">Book Diamond Head
+            Hike</a>
+    </div>
+
+    <div class="day-card">
+        <div class="day-header">
+            <span class="day-title">Day 5 (Feb 13): Free Day in Oahu</span>
+            <span class="tag">Flex Day</span>
+        </div>
+        <div class="section-title">📅 The Plan</div>
+        <ul>
+            <li>Since you gained an extra day, use this to relax by the condo pool, rent surfboards in Waikiki, or do
+                souvenir shopping.</li>
+        </ul>
+        <div class="section-title">🍳 Menu</div>
+        <ul>
+            <li><strong>Lunch:</strong> <a href="https://iyasumehawaii.com/" target="_blank" class="inline-link">Musubi
+                    Cafe Iyasume</a> (Rice balls with Spam/Egg).</li>
+            <li><strong>Dinner:</strong> Clean out the condo fridge.</li>
         </ul>
     </div>
 
     <div class="shopping-list">
-        <h3>🛒 Oahu Grocery List (Target / Safeway / Instacart)</h3>
+        <h3>🛒 Oahu Grocery List (Day 1 - Target / Safeway / Instacart)</h3>
         <table>
             <tr>
                 <th colspan="2" style="background-color: #e2e8f0; font-weight: bold;">Meals & Snacks</th>
             </tr>
             <tr>
-                <td>Spaghetti & Jar Sauce</td>
-                <td>Dinner Day 6 (Easiest condo meal).</td>
+                <td>Spaghetti, Jar Sauce, & Ground Beef (1 lb)</td>
+                <td>Dinner Day 2.</td>
             </tr>
             <tr>
-                <td>Ground Beef (1 lb)</td>
-                <td>For Spaghetti sauce (optional but better).</td>
+                <td>Ground Beef (2 lbs), Taco Kit, Salsa</td>
+                <td>Taco Night (Day 4).</td>
             </tr>
             <tr>
                 <td>Milk & Cereal</td>
@@ -380,19 +464,208 @@
             </tr>
 
             <tr>
-                <th colspan="2" style="background-color: #e2e8f0; font-weight: bold;">Essentials Re-Stock</th>
+                <th colspan="2" style="background-color: #e2e8f0; font-weight: bold;">Essentials</th>
             </tr>
             <tr>
                 <td><strong>Sunscreen & Aloe</strong></td>
-                <td>You will run out by Day 5.</td>
+                <td>Crucial for beach days.</td>
             </tr>
             <tr>
-                <td><strong>Coffee Filters</strong></td>
+                <td><strong>Coffee & Filters</strong></td>
                 <td>Check condo first, but often missing.</td>
             </tr>
             <tr>
-                <td>Cooking Oil / Butter</td>
-                <td>Only buy small amount if you couldn't bring from Big Island.</td>
+                <td>Cooking Oil / Butter / Mayo</td>
+                <td>For cooking and sandwiches.</td>
+            </tr>
+        </table>
+    </div>
+
+    <hr>
+
+    <h2>🌋 PART 2: BIG ISLAND (The Road Trip)</h2>
+    <p><em>Transport: Rental Minivan required. Stay: Waikoloa/Kohala Coast Condo.</em></p>
+
+    <div class="day-card">
+        <div class="day-header">
+            <span class="day-title">Day 6 (Feb 14): Island Hop</span>
+            <span class="tag">Travel</span>
+        </div>
+        <div class="section-title">📅 The Plan</div>
+        <ul>
+            <li>Fly HNL → KOA. Depart 1:18 PM, Arrive 2:06 PM.</li>
+            <li>Pick up Minivan.</li>
+            <li><strong>Immediate Stop:</strong> <a
+                    href="https://www.costco.com/warehouse-locations/kailua-kona-hi-119.html" target="_blank"
+                    class="inline-link">Costco Kona</a> (Near Airport) to stock the condo.</li>
+            <li>Check into Condo (Waikoloa).</li>
+        </ul>
+        <div class="section-title">🍳 Menu</div>
+        <ul>
+            <li><strong>Dinner:</strong> "Arrival Feast" (Rotisserie Chicken, Bagged Caesar Salad, Rice).</li>
+        </ul>
+        <div class="treat-box">
+            <span class="treat-icon">🍦</span>
+            <div><strong>Daily Treat:</strong> <em>Tropical Dreams Ice Cream</em> (Buy a pint at the grocery store).
+            </div>
+        </div>
+    </div>
+
+    <div class="day-card">
+        <div class="day-header">
+            <span class="day-title">Day 7 (Feb 15): The Grand Loop (Volcanoes)</span>
+            <span class="tag">National Park</span>
+        </div>
+        <div class="section-title">📅 The Plan</div>
+        <ul>
+            <li>Early start (7:30 AM). Drive the scenic Southern Route (Highway 11) from Waikoloa.</li>
+            <li><strong>Morning Stop:</strong> <strong>Punaluʻu Black Sand Beach</strong>. Walk the jet-black sand and
+                look for resting sea turtles.</li>
+            <li><strong>Afternoon:</strong> <a href="https://www.nps.gov/havo/index.htm" target="_blank"
+                    class="inline-link">Hawaiʻi Volcanoes National Park</a>. Hike the Kīlauea Iki Trail.</li>
+            <li><strong>Evening Drive:</strong> Return via Saddle Road after dinner.</li>
+        </ul>
+        <div class="section-title">🍳 Menu</div>
+        <ul>
+            <li><strong>Lunch (Packed):</strong> Sandwiches eaten right on the beach at Punaluʻu.</li>
+            <li><strong>Dinner (Cheap Eats):</strong> <a href="https://cafe100.com/" target="_blank"
+                    class="inline-link">Cafe 100</a> in Hilo.</li>
+        </ul>
+        <div class="treat-box">
+            <span class="treat-icon">🍪</span>
+            <div><strong>Daily Treat:</strong> <a href="https://www.bigislandcandies.com/" target="_blank"
+                    class="inline-link">Big Island Candies (Hilo)</a>.</div>
+        </div>
+        <a href="https://www.nps.gov/havo/index.htm" target="_blank" class="link-btn">National Park Info ($30/car)</a>
+    </div>
+
+    <div class="day-card">
+        <div class="day-header">
+            <span class="day-title">Day 8 (Feb 16): Best Beach & Stargazing</span>
+            <span class="tag">Relax + Space</span>
+        </div>
+        <div class="section-title">📅 The Plan</div>
+        <ul>
+            <li>Morning: <a href="https://dlnr.hawaii.gov/dsp/parks/hawaii/hapuna-beach-state-recreation-area/"
+                    target="_blank" class="inline-link">Hapuna Beach State Recreation Area</a>.</li>
+            <li>Evening: <a href="https://hilo.hawaii.edu/maunakea/visitor-information/" target="_blank"
+                    class="inline-link">Mauna Kea Visitor Center</a> (Stargazing).</li>
+        </ul>
+        <div class="section-title">🍳 Menu</div>
+        <ul>
+            <li><strong>Lunch (Packed):</strong> Wraps & Chips (at Beach).</li>
+            <li><strong>Dinner (Condo):</strong> Leftover Rotisserie Chicken Fried Rice.</li>
+        </ul>
+        <div class="treat-box">
+            <span class="treat-icon">🍧</span>
+            <div><strong>Daily Treat:</strong> <a href="https://www.obishaveice.com/" target="_blank"
+                    class="inline-link">Original Big Island Shave Ice Co.</a></div>
+        </div>
+    </div>
+
+    <div class="day-card">
+        <div class="day-header">
+            <span class="day-title">Day 9 (Feb 17): History & North Tip</span>
+            <span class="tag">Culture + Adventure</span>
+        </div>
+        <div class="section-title">📅 The Plan</div>
+        <div class="bonus-stop">
+            <strong>🏛️ Added Stop: <a href="https://www.nps.gov/puhe/index.htm" target="_blank"
+                    class="inline-link">Puʻukoholā Heiau NHS</a></strong><br>
+            Stop here first. Time: 45 mins. Cost: Free.
+        </div>
+        <p><em>Then, choose your Adventure:</em></p>
+        <div class="option-box">
+            <div class="option-title">Option A: <a href="https://kohalazipline.com/" target="_blank"
+                    class="inline-link">Ziplining (Kohala)</a></div>
+            <ul>
+                <li><strong>Best for:</strong> Adrenaline lovers. (Approx $200/person).</li>
+            </ul>
+        </div>
+        <div class="option-box">
+            <div class="option-title">Option B: Pololū Valley Hike</div>
+            <ul>
+                <li><strong>Best for:</strong> Nature lovers & Budget saving. Hike to wild black sand beach.</li>
+            </ul>
+        </div>
+        <div class="section-title">🍳 Menu</div>
+        <ul>
+            <li><strong>Lunch (Packed):</strong> Picnic at the beach.</li>
+            <li><strong>Dinner (Condo):</strong> BBQ Burgers at Condo Pool.</li>
+        </ul>
+        <div class="treat-box">
+            <span class="treat-icon">🍩</span>
+            <div><strong>Daily Treat:</strong> <a href="https://www.texdriveinhawaii.com/" target="_blank"
+                    class="inline-link">Tex Drive-In</a> (Hot Malasadas on the drive back).</div>
+        </div>
+    </div>
+
+    <div class="day-card">
+        <div class="day-header">
+            <span class="day-title">Day 10 (Feb 18): The Long Goodbye</span>
+            <span class="tag">Red-Eye Departure</span>
+        </div>
+        <div class="section-title">📅 The Plan</div>
+        <ul>
+            <li>Check out of Condo (ask for late checkout if possible).</li>
+            <li>Spend the afternoon exploring Kailua-Kona town, getting souvenirs, or a final beach dip.</li>
+            <li>Head to KOA airport for your 10:30 PM flight.</li>
+        </ul>
+        <div class="section-title">🍳 Menu</div>
+        <ul>
+            <li><strong>Lunch:</strong> Final Poke Bowl or Food Truck.</li>
+            <li><strong>Dinner:</strong> Grab a nice sit-down dinner in Kona town before heading to the airport.</li>
+        </ul>
+    </div>
+
+    <div class="shopping-list">
+        <h3>🛒 Big Island Costco List (Day 6 - Kona)</h3>
+        <table>
+            <tr>
+                <th colspan="2" style="background-color: #e2e8f0; font-weight: bold;">Main Meals & Snacks</th>
+            </tr>
+            <tr>
+                <td>2 Rotisserie Chickens</td>
+                <td>Dinner Day 6 + Leftovers for Day 8 Fried Rice.</td>
+            </tr>
+            <tr>
+                <td>Burgers/Hot Dogs</td>
+                <td>For BBQ Night (Day 9).</td>
+            </tr>
+            <tr>
+                <td>Bagged Salads (2 big kits)</td>
+                <td>Vegetable side for chicken.</td>
+            </tr>
+            <tr>
+                <td>Rice (5lb bag)</td>
+                <td>Dinner Day 6 + Fried Rice Day 8.</td>
+            </tr>
+            <tr>
+                <td>Eggs (24 pack) & Bacon</td>
+                <td>Hearty breakfasts.</td>
+            </tr>
+            <tr>
+                <td>Bagels / Deli Meat / Cheese</td>
+                <td>Breakfasts & Sandwiches.</td>
+            </tr>
+            <tr>
+                <td>Poke (Seafood Section)</td>
+                <td>Cheaper than restaurants, high quality.</td>
+            </tr>
+            <tr>
+                <th colspan="2" style="background-color: #e2e8f0; font-weight: bold;">Pantry Re-Stock</th>
+            </tr>
+            <tr>
+                <td><strong>Soy Sauce (Aloha Shoyu)</strong></td>
+                <td>Essential for the Day 8 Fried Rice.</td>
+            </tr>
+            <tr>
+                <td><strong>Ziploc Bags</strong></td>
+                <td>Mandatory for packing lunches/snacks.</td>
+            </tr>
+            <tr>
+                <td>Case of Water</td>
+                <td>Refill bottles for hiking.</td>
             </tr>
         </table>
     </div>
