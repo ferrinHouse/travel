@@ -6,112 +6,27 @@ on:
       - main
 
 jobs:
-  # 1. BUILD APP BINARIES
-  build-app:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Generate Prisma Client
-        run: npx prisma generate
-        env:
-          DATABASE_URL: "file:./dev.db"
-
-      - name: Build Next.js
-        run: npm run build
-        env:
-          NEXT_TELEMETRY_DISABLED: 1
-
-      - name: Prepare Publish Directory
-        run: |
-          mkdir -p publish
-          # Copy standalone files (server.js, package.json, etc.)
-          cp -r .next/standalone/* publish/
-          # Copy static files (CSS, JS, images)
-          mkdir -p publish/.next/static
-          cp -r .next/static/* publish/.next/static/
-          cp -r public publish/
-          # Copy prisma configurations for runtime db pushes
-          cp -r prisma publish/
-          cp docker-entrypoint.sh publish/
-          # Copy full node_modules so prisma CLI is available for runtime migrations
-          rm -rf publish/node_modules
-          cp -r node_modules publish/
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: travel-app-publish
-          path: ./publish
-          retention-days: 1
-
-  # 2. DEPLOY TO KUBERNETES
   deploy:
     runs-on: self-hosted
-    needs: build-app
+
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: travel-app-publish
-          path: ./publish
+      # Step 1: Build the Next.js Docker image locally on the Pi
+      - name: Build Docker Image
+        run: |
+          docker build -t travel-site:latest .
+          echo "Docker image built successfully."
 
-      - name: Apply Kubernetes Manifests
+      # Step 2: Apply Kubernetes Manifests using Kustomize
+      # This generates secrets from .env and patches the NFS server details
+      - name: Apply Kubernetes Kustomize Manifests
         run: |
           kubectl apply -k k8s
-          echo "Kubernetes configuration applied."
+          echo "Kubernetes configuration updated."
 
-      - name: Start Loader Pod
-        run: |
-          cat <<EOF | kubectl apply -f -
-          apiVersion: v1
-          kind: Pod
-          metadata:
-            name: travel-content-loader
-          spec:
-            containers:
-            - name: loader
-              image: alpine
-              command: ["sleep", "3600"]
-              volumeMounts:
-              - mountPath: /app
-                name: app-storage
-            volumes:
-            - name: app-storage
-              persistentVolumeClaim:
-                claimName: travel-site-pvc
-          EOF
-          
-          echo "Waiting for loader pod..."
-          kubectl wait --for=condition=Ready pod/travel-content-loader --timeout=60s
-
-      - name: Copy Files to NFS Volume
-        run: |
-          # Clear existing files on the volume EXCEPT the database directory (which contains SQLite travel.db!)
-          kubectl exec travel-content-loader -- sh -c "find /app -mindepth 1 -maxdepth 1 ! -name 'database' -exec rm -rf {} +"
-          
-          # Copy new files from self-hosted runner workspace into the NFS volume
-          kubectl cp ./publish/. travel-content-loader:/app/
-          echo "Files copied successfully."
-
-      - name: Clean up Loader Pod
-        run: |
-          kubectl delete pod travel-content-loader
-          echo "Loader pod deleted."
-
+      # Step 3: Rollout restart deployment to load the new container image
       - name: Rollout Restart Deployment
         run: |
           kubectl rollout restart deployment/travel-site-deployment
