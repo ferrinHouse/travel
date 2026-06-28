@@ -44,6 +44,9 @@ jobs:
           # Copy prisma configurations for runtime db pushes
           cp -r prisma publish/
           cp docker-entrypoint.sh publish/
+          # Ensure LF line endings for the entrypoint script (fixes Windows CRLF compatibility)
+          sed -i 's/\r$//' publish/docker-entrypoint.sh
+          chmod +x publish/docker-entrypoint.sh
           # Copy full node_modules so prisma CLI is available for runtime migrations
           rm -rf publish/node_modules
           cp -r node_modules publish/
