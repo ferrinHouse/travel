@@ -14,7 +14,10 @@ spec:
     spec:
       containers:
         - name: nextjs
-          image: travel-site:latest
+          image: node:22-alpine
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "/app/docker-entrypoint.sh"]
+          workingDir: /app
           resources:
             requests:
               cpu: "10m"
@@ -27,6 +30,8 @@ spec:
           env:
             - name: DATABASE_URL
               value: "file:/app/database/travel.db"
+            - name: PORT
+              value: "3000"
             - name: ADMIN_PASSCODE
               valueFrom:
                 secretKeyRef:
