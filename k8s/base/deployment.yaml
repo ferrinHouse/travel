@@ -39,7 +39,7 @@ spec:
                   key: ADMIN_PASSCODE
           volumeMounts:
             - name: database-volume
-              mountPath: /app/database
+              mountPath: /app
       volumes:
         - name: database-volume
           persistentVolumeClaim:
