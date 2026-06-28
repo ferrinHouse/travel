@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Trip {
+  id           String          @id // e.g. "chicago", "boston", "hawaii"
+  name         String
+  description  String?
+  dates        String
+  travelers    String
+  status       String          // "upcoming" or "past"
+  startDate    DateTime?
+  endDate      DateTime?
+  tag          String          // "City", "Beach", "National Parks", etc.
+  primaryColor String?         // e.g. "#004488"
+  accentColor  String?         // e.g. "#d9534f"
+  
+  checklist    ChecklistItem[]
+  logistics    LogisticsCard[]
+  days         ItineraryDay[]
+  meals        MealPlan[]
+  groceries    GroceryItem[]
+}
+
+model ChecklistItem {
+  id          Int      @id @default(autoincrement())
+  tripId      String
+  trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  text        String
+  isCompleted Boolean  @default(false)
+  category    String   // "pre-trip", "packing", "app"
+}
+
+model LogisticsCard {
+  id      Int    @id @default(autoincrement())
+  tripId  String
+  trip    Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  title   String
+  content String // Markdown or HTML representation of flights/hotels
+  order   Int    @default(0)
+}
+
+model ItineraryDay {
+  id         Int                 @id @default(autoincrement())
+  tripId     String
+  trip       Trip                @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  dayNumber  Int
+  dateLabel  String              // e.g., "Day 1: Sunday, June 21"
+  title      String?             // e.g., "Arrival & Relaxing at VRBO"
+  activities ItineraryActivity[]
+}
+
+model ItineraryActivity {
+  id          Int          @id @default(autoincrement())
+  dayId       Int
+  day         ItineraryDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  time        String?      // e.g., "09:00 AM" or "Evening"
+  description String
+  order       Int          @default(0)
+  isAlert     Boolean      @default(false)
+  details     String?      // Optional notes/dessert splurges
+}
+
+model MealPlan {
+  id        Int    @id @default(autoincrement())
+  tripId    String
+  trip      Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  dayNumber Int
+  mealType  String // "Breakfast", "Lunch", "Dinner"
+  mealName  String // e.g. "Tacos at VRBO"
+  details   String?
+  time      String? // e.g. "5:30 PM" (will auto-display on itinerary if set)
+}
+
+model GroceryItem {
+  id       Int     @id @default(autoincrement())
+  tripId   String
+  trip     Trip    @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  name     String
+  category String  // "Breakfast", "Packed Lunches", "Tacos", etc.
+  isBought Boolean @default(false)
+}

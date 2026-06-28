@@ -1,27 +1,33 @@
 name: Deploy Travel Site
 
 on:
-    push:
-        branches:
-            - main
+  push:
+    branches:
+      - main
 
 jobs:
-    deploy:
-        runs-on: self-hosted
+  deploy:
+    runs-on: self-hosted
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            # Step 1: Sync the web files (HTML/CSS/JS)
-            - name: Sync Web Files
-              run: |
-                  rsync -avz --delete ./ /home/mferrin/familyTravel/
-                  echo "Web files synced."
+      # Step 1: Build the Next.js Docker image locally on the Pi
+      - name: Build Docker Image
+        run: |
+          docker build -t travel-site:latest .
+          echo "Docker image built successfully."
 
-            # Step 2: Apply Kubernetes Manifests
-            # This ensures any changes to your YAML are live immediately
-            - name: Apply Kubernetes Manifests
-              run: |
-                  kubectl apply -f familyTravel.yaml
-                  echo "Kubernetes configuration updated."
+      # Step 2: Apply Kubernetes Manifests using Kustomize
+      # This generates secrets from .env and patches the NFS server details
+      - name: Apply Kubernetes Kustomize Manifests
+        run: |
+          kubectl apply -k k8s
+          echo "Kubernetes configuration updated."
+
+      # Step 3: Rollout restart deployment to load the new container image
+      - name: Rollout Restart Deployment
+        run: |
+          kubectl rollout restart deployment/travel-site-deployment
+          echo "Rollout restart triggered."
