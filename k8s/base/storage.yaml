@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: travel-site-pv
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: REPLACE_ME_VIA_PATCH
+    path: REPLACE_ME_VIA_PATCH
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: travel-site-pvc
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi

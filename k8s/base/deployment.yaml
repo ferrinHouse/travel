@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: travel-site-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: travel-site
+  template:
+    metadata:
+      labels:
+        app: travel-site
+    spec:
+      containers:
+        - name: nextjs
+          image: travel-site:latest
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "64Mi"
+            limits:
+              cpu: "100m"
+              memory: "256Mi"
+          ports:
+            - containerPort: 3000
+          env:
+            - name: DATABASE_URL
+              value: "file:/app/database/travel.db"
+            - name: ADMIN_PASSCODE
+              valueFrom:
+                secretKeyRef:
+                  name: travel-secrets
+                  key: ADMIN_PASSCODE
+          volumeMounts:
+            - name: database-volume
+              mountPath: /app/database
+      volumes:
+        - name: database-volume
+          persistentVolumeClaim:
+            claimName: travel-site-pvc
