@@ -35,8 +35,8 @@ jobs:
       - name: Prepare Publish Directory
         run: |
           mkdir -p publish
-          # Copy standalone files (server.js, package.json, etc.)
-          cp -r .next/standalone/* publish/
+          # Copy standalone files (server.js, package.json, etc. including hidden .next directory)
+          cp -r .next/standalone/. publish/
           # Copy static files (CSS, JS, images)
           mkdir -p publish/.next/static
           cp -r .next/static/* publish/.next/static/
