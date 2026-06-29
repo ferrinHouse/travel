@@ -103,12 +103,21 @@ jobs:
 
       - name: Copy Files to NFS Volume
         run: |
-          # Clear existing files on the volume EXCEPT the database directory (which contains SQLite travel.db!)
+          # 1. Create a tar archive of the publish directory (capturing all hidden dot-directories like .next and .prisma)
+          tar -czf app.tar -C publish .
+          
+          # 2. Clear existing files on the volume EXCEPT the database directory (which contains SQLite travel.db!)
           kubectl exec travel-content-loader -- sh -c "find /app -mindepth 1 -maxdepth 1 ! -name 'database' -exec rm -rf {} +"
           
-          # Copy new files from self-hosted runner workspace into the NFS volume
-          kubectl cp ./publish/. travel-content-loader:/app/
-          echo "Files copied successfully."
+          # 3. Copy the tar archive into the volume
+          kubectl cp app.tar travel-content-loader:/app/app.tar
+          
+          # 4. Extract the tar archive inside the loader pod and remove the tar file
+          kubectl exec travel-content-loader -- sh -c "tar -xzf /app/app.tar -C /app && rm /app/app.tar"
+          
+          # 5. Clean up local tar file
+          rm app.tar
+          echo "Files copied and extracted successfully."
 
       - name: Clean up Loader Pod
         run: |
