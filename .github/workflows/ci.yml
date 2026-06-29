@@ -51,11 +51,14 @@ jobs:
           rm -rf publish/node_modules
           cp -r node_modules publish/
 
+      - name: Compress Build Directory
+        run: tar -czf app.tar.gz -C publish .
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: travel-app-publish
-          path: ./publish
+          name: travel-app-archive
+          path: ./app.tar.gz
           retention-days: 1
 
   # 2. DEPLOY TO KUBERNETES
@@ -69,8 +72,8 @@ jobs:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: travel-app-publish
-          path: ./publish
+          name: travel-app-archive
+          path: .
 
       - name: Apply Kubernetes Manifests
         run: |
@@ -103,20 +106,17 @@ jobs:
 
       - name: Copy Files to NFS Volume
         run: |
-          # 1. Create a tar archive of the publish directory (capturing all hidden dot-directories like .next and .prisma)
-          tar -czf app.tar -C publish .
-          
-          # 2. Clear existing files on the volume EXCEPT the database directory (which contains SQLite travel.db!)
+          # 1. Clear existing files on the volume EXCEPT the database directory (which contains SQLite travel.db!)
           kubectl exec travel-content-loader -- sh -c "find /app -mindepth 1 -maxdepth 1 ! -name 'database' -exec rm -rf {} +"
           
-          # 3. Copy the tar archive into the volume
-          kubectl cp app.tar travel-content-loader:/app/app.tar
+          # 2. Copy the tar archive from workspace into the loader pod volume
+          kubectl cp app.tar.gz travel-content-loader:/app/app.tar.gz
           
-          # 4. Extract the tar archive inside the loader pod and remove the tar file
-          kubectl exec travel-content-loader -- sh -c "tar -xzf /app/app.tar -C /app && rm /app/app.tar"
+          # 3. Extract the tar archive inside the loader pod and clean up
+          kubectl exec travel-content-loader -- sh -c "tar -xzf /app/app.tar.gz -C /app && rm /app/app.tar.gz"
           
-          # 5. Clean up local tar file
-          rm app.tar
+          # 4. Clean up local runner tar file
+          rm app.tar.gz
           echo "Files copied and extracted successfully."
 
       - name: Clean up Loader Pod
