@@ -5,7 +5,7 @@ set -e
 mkdir -p /app/database
 
 # Verify and rebuild better-sqlite3 if there is an architecture mismatch
-if ! node -e "require('better-sqlite3')" 2>/dev/null; then
+if ! node -e "const Database = require('better-sqlite3'); new Database(':memory:')" 2>/dev/null; then
   echo "Native better-sqlite3 addon is missing or incompatible. Rebuilding natively..."
   apk add --no-cache python3 make g++ gcc
   npm rebuild better-sqlite3
