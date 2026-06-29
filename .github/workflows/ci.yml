@@ -43,6 +43,7 @@ jobs:
           cp -r public publish/
           # Copy prisma configurations for runtime db pushes
           cp -r prisma publish/
+          cp prisma.config.ts publish/
           cp docker-entrypoint.sh publish/
           # Ensure LF line endings for the entrypoint script (fixes Windows CRLF compatibility)
           sed -i 's/\r$//' publish/docker-entrypoint.sh
