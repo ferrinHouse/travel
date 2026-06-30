@@ -46,15 +46,16 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder --chown=nextjs:nodejs /app/docker-entrypoint.sh ./docker-entrypoint.sh
 
-# Copy Prisma CLI and engines from builder stage so prisma migrations/db push can run on startup
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.bin ./node_modules/.bin
+# Install Prisma CLI locally in runner stage to run migrations on startup
+RUN npm install prisma@7.8.0
 
 RUN chmod +x docker-entrypoint.sh
 
 # Setup SQLite database directory with correct permissions
 RUN mkdir -p /app/database && chown -R nextjs:nodejs /app/database
+
+# Ensure everything inside /app is owned by nextjs
+RUN chown -R nextjs:nodejs /app
 
 USER nextjs
 
