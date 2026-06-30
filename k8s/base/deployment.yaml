@@ -12,12 +12,12 @@ spec:
       labels:
         app: travel-site
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: nextjs
-          image: node:22-alpine
-          imagePullPolicy: IfNotPresent
-          command: ["/bin/sh", "/app/docker-entrypoint.sh"]
-          workingDir: /app
+          image: ghcr.io/ferrinhouse/travel-site:latest
+          imagePullPolicy: Always
           resources:
             requests:
               cpu: "10m"
@@ -39,7 +39,7 @@ spec:
                   key: ADMIN_PASSCODE
           volumeMounts:
             - name: database-volume
-              mountPath: /app
+              mountPath: /app/database
       volumes:
         - name: database-volume
           persistentVolumeClaim:

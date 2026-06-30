@@ -6,130 +6,50 @@ on:
       - main
 
 jobs:
-  # 1. BUILD APP BINARIES
-  build-app:
+  # 1. BUILD DOCKER IMAGE FOR ARM64 AND PUSH TO GHCR
+  build-image:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
         with:
-          node-version: 22
-          cache: 'npm'
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Generate Prisma Client
-        run: npx prisma generate
-        env:
-          DATABASE_URL: "file:./dev.db"
-
-      - name: Build Next.js
-        run: npm run build
-        env:
-          NEXT_TELEMETRY_DISABLED: 1
-
-      - name: Prepare Publish Directory
-        run: |
-          mkdir -p publish
-          # Copy standalone files (server.js, package.json, etc. including hidden .next directory)
-          cp -r .next/standalone/. publish/
-          # Copy static files (CSS, JS, images)
-          mkdir -p publish/.next/static
-          cp -r .next/static/* publish/.next/static/
-          cp -r public publish/
-          # Copy prisma configurations for runtime db pushes
-          cp -r prisma publish/
-          cp prisma.config.ts publish/
-          cp docker-entrypoint.sh publish/
-          # Ensure LF line endings for the entrypoint script (fixes Windows CRLF compatibility)
-          sed -i 's/\r$//' publish/docker-entrypoint.sh
-          chmod +x publish/docker-entrypoint.sh
-          # Copy full node_modules so prisma CLI is available for runtime migrations
-          rm -rf publish/node_modules
-          cp -r node_modules publish/
-
-      - name: Compress Build Directory
-        run: tar -czf app.tar.gz -C publish .
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
         with:
-          name: travel-app-archive
-          path: ./app.tar.gz
-          retention-days: 1
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: ghcr.io/ferrinhouse/travel-site:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   # 2. DEPLOY TO KUBERNETES
   deploy:
     runs-on: self-hosted
-    needs: build-app
+    needs: build-image
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: travel-app-archive
-          path: .
-
       - name: Apply Kubernetes Manifests
         run: |
           kubectl apply -k k8s
-          # Scale down the deployment to 0 to release NFS locks on better-sqlite3 files
-          kubectl scale deployment/travel-site-deployment --replicas=0
-          # Wait up to 60s for running pods to terminate and release volume locks
-          kubectl wait --for=delete pod -l app=travel-site --timeout=60s || true
-          echo "Kubernetes configuration applied and deployment scaled down."
+          echo "Kubernetes configuration applied."
 
-      - name: Start Loader Pod
+      - name: Trigger Rolling Restart
         run: |
-          cat <<EOF | kubectl apply -f -
-          apiVersion: v1
-          kind: Pod
-          metadata:
-            name: travel-content-loader
-          spec:
-            containers:
-            - name: loader
-              image: alpine
-              command: ["sleep", "3600"]
-              volumeMounts:
-              - mountPath: /app
-                name: app-storage
-            volumes:
-            - name: app-storage
-              persistentVolumeClaim:
-                claimName: travel-site-pvc
-          EOF
-          
-          echo "Waiting for loader pod..."
-          kubectl wait --for=condition=Ready pod/travel-content-loader --timeout=60s
-
-      - name: Copy Files to NFS Volume
-        run: |
-          # 1. Clear existing files on the volume EXCEPT the database directory (which contains SQLite travel.db!)
-          kubectl exec travel-content-loader -- sh -c "find /app -mindepth 1 -maxdepth 1 ! -name 'database' -exec rm -rf {} +"
-          
-          # 2. Copy the tar archive from workspace into the loader pod volume
-          kubectl cp app.tar.gz travel-content-loader:/app/app.tar.gz
-          
-          # 3. Extract the tar archive inside the loader pod and clean up
-          kubectl exec travel-content-loader -- sh -c "tar -xzf /app/app.tar.gz -C /app && rm /app/app.tar.gz"
-          
-          # 4. Clean up local runner tar file
-          rm app.tar.gz
-          echo "Files copied and extracted successfully."
-
-      - name: Clean up Loader Pod
-        run: |
-          kubectl delete pod travel-content-loader
-          echo "Loader pod deleted."
-
-      - name: Scale Up Deployment
-        run: |
-          kubectl scale deployment/travel-site-deployment --replicas=1
-          echo "Deployment scaled up to 1 replica."
+          kubectl rollout restart deployment/travel-site-deployment
+          echo "Rollout restart triggered."
