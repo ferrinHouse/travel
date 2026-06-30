@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   # 1. BUILD DOCKER IMAGE FOR ARM64 AND PUSH TO GHCR
   build-image:
