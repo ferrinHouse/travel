@@ -19,9 +19,16 @@ export default function TripDetailsClient({ initialTrip }) {
   
   const [editingLogisticsId, setEditingLogisticsId] = useState(null);
   const [editLogisticsForm, setEditLogisticsForm] = useState({ title: '', content: '' });
+  const [showAddLogistics, setShowAddLogistics] = useState(false);
+  const [newLogisticsForm, setNewLogisticsForm] = useState({ title: '', content: '' });
 
   const [newChecklistForm, setNewChecklistForm] = useState({ text: '', category: 'packing' });
   const [newGroceryForm, setNewGroceryForm] = useState({ name: '', category: 'General' });
+  
+  // Checklist edit states
+  const [editingChecklistId, setEditingChecklistId] = useState(null);
+  const [editChecklistText, setEditChecklistText] = useState('');
+  const [checklistInputs, setChecklistInputs] = useState({ 'pre-trip': '', 'packing': '', 'app': '' });
 
   // Load session auth status on mount
   useEffect(() => {
@@ -82,6 +89,80 @@ export default function TripDetailsClient({ initialTrip }) {
       });
     } catch (err) {
       console.error('Failed to sync checklist toggle');
+    }
+  };
+
+  // Add Checklist Item (Auth Required)
+  const addChecklistItem = async (category, text) => {
+    if (!text.trim()) return;
+
+    try {
+      const res = await fetch('/api/checklist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tripId: trip.id, text, category })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTrip(prev => ({
+          ...prev,
+          checklist: [...prev.checklist, data.item]
+        }));
+      } else {
+        alert(data.message || 'Failed to add item');
+      }
+    } catch (err) {
+      console.error('Failed to add checklist item:', err);
+    }
+  };
+
+  // Edit Checklist Item (Auth Required)
+  const editChecklistItem = async (itemId, text) => {
+    if (!text.trim()) return;
+
+    try {
+      const res = await fetch('/api/checklist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: itemId, text })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTrip(prev => ({
+          ...prev,
+          checklist: prev.checklist.map(item =>
+            item.id === itemId ? { ...item, text: data.item.text } : item
+          )
+        }));
+      } else {
+        alert(data.message || 'Failed to edit item');
+      }
+    } catch (err) {
+      console.error('Failed to edit checklist item:', err);
+    }
+  };
+
+  // Delete Checklist Item (Auth Required)
+  const deleteChecklistItem = async (itemId) => {
+    if (!confirm('Are you sure you want to delete this item?')) return;
+
+    try {
+      const res = await fetch('/api/checklist', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: itemId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTrip(prev => ({
+          ...prev,
+          checklist: prev.checklist.filter(item => item.id !== itemId)
+        }));
+      } else {
+        alert(data.message || 'Failed to delete item');
+      }
+    } catch (err) {
+      console.error('Failed to delete checklist item:', err);
     }
   };
 
@@ -231,6 +312,56 @@ export default function TripDetailsClient({ initialTrip }) {
       }
     } catch (err) {
       console.error('Failed to save logistics card');
+    }
+  };
+
+  // Add Logistics Card (Auth Required)
+  const addLogisticsCard = async () => {
+    if (!newLogisticsForm.title.trim() || !newLogisticsForm.content.trim()) return;
+
+    try {
+      const res = await fetch('/api/logistics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tripId: trip.id, ...newLogisticsForm })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTrip(prev => ({
+          ...prev,
+          logistics: [...prev.logistics, data.card]
+        }));
+        setNewLogisticsForm({ title: '', content: '' });
+        setShowAddLogistics(false);
+      } else {
+        alert(data.message || 'Failed to add card');
+      }
+    } catch (err) {
+      console.error('Failed to add logistics card:', err);
+    }
+  };
+
+  // Delete Logistics Card (Auth Required)
+  const deleteLogisticsCard = async (cardId) => {
+    if (!confirm('Are you sure you want to delete this logistics card?')) return;
+
+    try {
+      const res = await fetch('/api/logistics', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: cardId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTrip(prev => ({
+          ...prev,
+          logistics: prev.logistics.filter(card => card.id !== cardId)
+        }));
+      } else {
+        alert(data.message || 'Failed to delete card');
+      }
+    } catch (err) {
+      console.error('Failed to delete logistics card:', err);
     }
   };
 
@@ -483,51 +614,92 @@ export default function TripDetailsClient({ initialTrip }) {
 
       {/* 2. LOGISTICS TAB */}
       {activeTab === 'logistics' && (
-        <div className="grid">
-          {trip.logistics.map((card) => (
-            <div key={card.id} className="card">
-              {editingLogisticsId === card.id ? (
+        <div>
+          <div className="grid">
+            {trip.logistics.map((card) => (
+              <div key={card.id} className="card">
+                {editingLogisticsId === card.id ? (
+                  <div>
+                    <label style={{ fontWeight: 'bold' }}>Title</label>
+                    <input 
+                      type="text" 
+                      className="edit-input" 
+                      value={editLogisticsForm.title}
+                      onChange={(e) => setEditLogisticsForm(prev => ({ ...prev, title: e.target.value }))}
+                    />
+                    <label style={{ fontWeight: 'bold' }}>Content (Markdown supported)</label>
+                    <textarea 
+                      className="edit-input" 
+                      rows={10}
+                      value={editLogisticsForm.content}
+                      onChange={(e) => setEditLogisticsForm(prev => ({ ...prev, content: e.target.value }))}
+                    />
+                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'space-between', width: '100%' }}>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button className="btn" onClick={() => saveLogisticsEdit(card.id)}>Save</button>
+                        <button className="btn btn-secondary" onClick={() => setEditingLogisticsId(null)}>Cancel</button>
+                      </div>
+                      <button className="btn" style={{ background: '#e02424', borderColor: '#e02424', color: '#fff' }} onClick={() => deleteLogisticsCard(card.id)}>Delete</button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                      <h3 style={{ margin: 0, color: 'var(--primary-color)' }}>{card.title}</h3>
+                      {isEditingEnabled && (
+                        <button className="btn btn-outline" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => {
+                          setEditingLogisticsId(card.id);
+                          setEditLogisticsForm({ title: card.title, content: card.content });
+                        }}>
+                          Edit
+                        </button>
+                      )}
+                    </div>
+                    <div 
+                      style={{ whiteSpace: 'pre-wrap', color: '#444', lineHeight: '1.5' }}
+                      dangerouslySetInnerHTML={{ __html: renderMarkdown(card.content) }}
+                    />
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {isEditingEnabled && (
+            <div className="card" style={{ maxWidth: '600px', margin: '30px auto 0 auto' }}>
+              {showAddLogistics ? (
                 <div>
-                  <label style={{ fontWeight: 'bold' }}>Title</label>
+                  <h3 style={{ color: 'var(--primary-color)', marginBottom: '15px' }}>➕ Add Logistics Card</h3>
+                  <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>Title</label>
                   <input 
                     type="text" 
+                    placeholder="e.g. Flight Details, Hotel Booking" 
                     className="edit-input" 
-                    value={editLogisticsForm.title}
-                    onChange={(e) => setEditLogisticsForm(prev => ({ ...prev, title: e.target.value }))}
+                    value={newLogisticsForm.title}
+                    onChange={(e) => setNewLogisticsForm(prev => ({ ...prev, title: e.target.value }))}
                   />
-                  <label style={{ fontWeight: 'bold' }}>Content (Markdown supported)</label>
+                  <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '6px', marginTop: '12px' }}>Content (Markdown supported)</label>
                   <textarea 
+                    placeholder="Enter booking confirmations, links, phone numbers, etc." 
                     className="edit-input" 
-                    rows={10}
-                    value={editLogisticsForm.content}
-                    onChange={(e) => setEditLogisticsForm(prev => ({ ...prev, content: e.target.value }))}
+                    rows={6}
+                    value={newLogisticsForm.content}
+                    onChange={(e) => setNewLogisticsForm(prev => ({ ...prev, content: e.target.value }))}
                   />
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button className="btn" onClick={() => saveLogisticsEdit(card.id)}>Save</button>
-                    <button className="btn btn-secondary" onClick={() => setEditingLogisticsId(null)}>Cancel</button>
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                    <button className="btn" onClick={addLogisticsCard}>Save Card</button>
+                    <button className="btn btn-secondary" onClick={() => setShowAddLogistics(false)}>Cancel</button>
                   </div>
                 </div>
               ) : (
-                <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h3 style={{ margin: 0, color: 'var(--primary-color)' }}>{card.title}</h3>
-                    {isEditingEnabled && (
-                      <button className="btn btn-outline" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => {
-                        setEditingLogisticsId(card.id);
-                        setEditLogisticsForm({ title: card.title, content: card.content });
-                      }}>
-                        Edit
-                      </button>
-                    )}
-                  </div>
-                  <div 
-                    style={{ whiteSpace: 'pre-wrap', color: '#444', lineHeight: '1.5' }}
-                    dangerouslySetInnerHTML={{ __html: renderMarkdown(card.content) }}
-                  />
-                </>
+                <div style={{ textAlign: 'center' }}>
+                  <button className="btn btn-outline" onClick={() => setShowAddLogistics(true)}>
+                    ➕ Add Logistics Card
+                  </button>
+                </div>
               )}
             </div>
-          ))}
+          )}
         </div>
       )}
 
@@ -547,20 +719,85 @@ export default function TripDetailsClient({ initialTrip }) {
                     <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No items in this list.</p>
                   ) : (
                     items.map((item) => (
-                      <div key={item.id} className="checklist-item">
-                        <input 
-                          type="checkbox" 
-                          className="checkbox-custom" 
-                          checked={item.isCompleted} 
-                          onChange={() => toggleChecklist(item.id, item.isCompleted)}
-                        />
-                        <span className={item.isCompleted ? 'completed-text' : ''}>
-                          {item.text}
-                        </span>
+                      <div key={item.id} className="checklist-item" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+                          <input 
+                            type="checkbox" 
+                            className="checkbox-custom" 
+                            checked={item.isCompleted} 
+                            onChange={() => toggleChecklist(item.id, item.isCompleted)}
+                          />
+                          {editingChecklistId === item.id ? (
+                            <input 
+                              type="text"
+                              className="edit-input"
+                              style={{ margin: 0, padding: '4px 8px', fontSize: '0.9rem', flexGrow: 1 }}
+                              value={editChecklistText}
+                              onChange={(e) => setEditChecklistText(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  editChecklistItem(item.id, editChecklistText);
+                                  setEditingChecklistId(null);
+                                } else if (e.key === 'Escape') {
+                                  setEditingChecklistId(null);
+                                }
+                              }}
+                              autoFocus
+                            />
+                          ) : (
+                            <span className={item.isCompleted ? 'completed-text' : ''}>
+                              {item.text}
+                            </span>
+                          )}
+                        </div>
+                        {isEditingEnabled && (
+                          <div style={{ display: 'flex', gap: '8px', marginLeft: '10px' }}>
+                            {editingChecklistId === item.id ? (
+                              <>
+                                <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '0.8rem' }} onClick={() => {
+                                  editChecklistItem(item.id, editChecklistText);
+                                  setEditingChecklistId(null);
+                                }}>Save</button>
+                                <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '0.8rem' }} onClick={() => setEditingChecklistId(null)}>Cancel</button>
+                              </>
+                            ) : (
+                              <>
+                                <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '0.8rem', background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => {
+                                  setEditingChecklistId(item.id);
+                                  setEditChecklistText(item.text);
+                                }}>✏️</button>
+                                <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '0.8rem', background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => deleteChecklistItem(item.id)}>❌</button>
+                              </>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))
                   )}
                 </div>
+
+                {isEditingEnabled && (
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
+                    <input 
+                      type="text" 
+                      placeholder="Add new item..." 
+                      className="edit-input"
+                      style={{ margin: 0, flexGrow: 1, padding: '6px 10px', fontSize: '0.9rem' }}
+                      value={checklistInputs[category] || ''}
+                      onChange={(e) => setChecklistInputs(prev => ({ ...prev, [category]: e.target.value }))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          addChecklistItem(category, checklistInputs[category]);
+                          setChecklistInputs(prev => ({ ...prev, [category]: '' }));
+                        }
+                      }}
+                    />
+                    <button className="btn" style={{ padding: '6px 12px', fontSize: '0.9rem' }} onClick={() => {
+                      addChecklistItem(category, checklistInputs[category]);
+                      setChecklistInputs(prev => ({ ...prev, [category]: '' }));
+                    }}>Add</button>
+                  </div>
+                )}
               </div>
             );
           })}
