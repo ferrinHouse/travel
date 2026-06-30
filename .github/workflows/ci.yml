@@ -79,7 +79,11 @@ jobs:
       - name: Apply Kubernetes Manifests
         run: |
           kubectl apply -k k8s
-          echo "Kubernetes configuration applied."
+          # Scale down the deployment to 0 to release NFS locks on better-sqlite3 files
+          kubectl scale deployment/travel-site-deployment --replicas=0
+          # Wait up to 60s for running pods to terminate and release volume locks
+          kubectl wait --for=delete pod -l app=travel-site --timeout=60s || true
+          echo "Kubernetes configuration applied and deployment scaled down."
 
       - name: Start Loader Pod
         run: |
@@ -125,7 +129,7 @@ jobs:
           kubectl delete pod travel-content-loader
           echo "Loader pod deleted."
 
-      - name: Rollout Restart Deployment
+      - name: Scale Up Deployment
         run: |
-          kubectl rollout restart deployment/travel-site-deployment
-          echo "Rollout restart triggered."
+          kubectl scale deployment/travel-site-deployment --replicas=1
+          echo "Deployment scaled up to 1 replica."
