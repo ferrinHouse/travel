@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test tests/**/*.test.mjs"
+    "test": "node --test tests/**/*.test.mjs",
+    "seed:meals": "node prisma/seed-meals.js"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.8.0",
