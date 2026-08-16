@@ -453,7 +453,7 @@ export default function TripDetailsClient({ initialTrip }) {
           {(() => {
             return trip.days.map((day) => {
               const dayMeals = trip.meals
-                .filter(m => m.dayNumber === day.dayNumber && m.time && m.mealName)
+                .filter(m => m.dayNumber === day.dayNumber && m.mealName)
                 .map(m => ({
                   id: `meal-${m.id}`,
                   time: m.time,
@@ -464,7 +464,18 @@ export default function TripDetailsClient({ initialTrip }) {
                 }));
 
               const allActivities = [...day.activities, ...dayMeals];
-              allActivities.sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+              allActivities.sort((a, b) => {
+                const getSortTime = (item) => {
+                  if (item.time) return parseTimeToMinutes(item.time);
+                  if (item.isMeal) {
+                    if (item.mealType === 'Breakfast') return 479; // Just before "morning" (480)
+                    if (item.mealType === 'Lunch') return 839; // Just before "afternoon" (840)
+                    if (item.mealType === 'Dinner') return 1079; // Just before "evening" (1080)
+                  }
+                  return 9999;
+                };
+                return getSortTime(a) - getSortTime(b);
+              });
 
               return (
                 <div key={day.id} className="itinerary-day card" style={{ marginBottom: '24px' }}>
