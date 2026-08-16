@@ -23,6 +23,10 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 
+# Install Prisma CLI to run migrations on startup
+# We do this early so it caches effectively
+RUN npm install prisma@7.8.0
+
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
@@ -46,8 +50,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder --chown=nextjs:nodejs /app/docker-entrypoint.sh ./docker-entrypoint.sh
 
-# Install Prisma CLI locally in runner stage to run migrations on startup
-RUN npm install prisma@7.8.0
+
 
 RUN chmod +x docker-entrypoint.sh
 
