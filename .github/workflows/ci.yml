@@ -50,7 +50,8 @@ jobs:
           kubectl apply -k k8s
           echo "Kubernetes configuration applied."
 
-      - name: Trigger Rolling Restart
+      - name: Trigger Rolling Restart and Verify Rollout
         run: |
           kubectl rollout restart deployment/travel-site-deployment
-          echo "Rollout restart triggered."
+          kubectl rollout status deployment/travel-site-deployment --timeout=180s
+          echo "Rollout successfully completed."
