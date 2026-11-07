@@ -58,7 +58,8 @@ A modern, responsive travel companion and itinerary management web application b
 travel/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml               # Automated ARM64 Docker build, GHCR push & K8s rollout
+│       ├── ci.yml               # Tests, then ARM64 Docker build, GHCR push & K8s rollout
+│       └── test.yml             # Lint + all tests on every pull request
 ├── k8s/                         # Kubernetes deployment manifests
 │   ├── base/                    # Base Deployment, Service, and PVC definitions
 │   │   ├── deployment.yaml
@@ -95,7 +96,11 @@ travel/
 │       ├── trip-reducer.js      # Pure reducer for trip page state
 │       └── api-client.js        # fetch wrapper that throws on API errors
 ├── tests/
-│   └── *.test.mjs               # Unit tests for the pure modules in src/lib
+│   ├── *.test.mjs               # Unit tests for pure modules in src/lib
+│   ├── api/                     # API handler tests against a throwaway SQLite DB
+│   ├── scripts/                 # Entrypoint, seed guard and deploy-config tests
+│   ├── e2e/                     # Playwright browser + HTTP tests against next start
+│   └── support/                 # Test DB helper and fixtures
 ├── Dockerfile                   # Multi-stage optimized Alpine Docker build
 ├── docker-entrypoint.sh         # Startup script running prisma db push before server.js
 ├── next.config.mjs              # Next.js config (output: "standalone")
@@ -170,11 +175,15 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 🧪 Testing & Quality
 
-Run the test suite using Node's built-in test runner:
+Tests use Node's built-in test runner, with Playwright for browser tests:
 
 ```bash
-npm test
+npm test            # unit, API handler and script tests (throwaway SQLite DBs, ~10s)
+npm run test:e2e    # production build + browser/HTTP tests against `next start`
+npm run test:all    # everything
 ```
+
+First-time setup for browser tests: `npx playwright install chromium`. Tests never touch `dev.db`; each test file gets its own temporary database. CI runs lint and both suites on every pull request, and deploys from `main` only after they pass.
 
 Run ESLint:
 

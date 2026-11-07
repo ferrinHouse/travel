@@ -10,9 +10,14 @@ permissions:
   packages: write
 
 jobs:
+  # 0. RUN THE TEST SUITE (same workflow that runs on pull requests)
+  test:
+    uses: ./.github/workflows/test.yml
+
   # 1. BUILD DOCKER IMAGE FOR ARM64 AND PUSH TO GHCR
   build-image:
     runs-on: ubuntu-24.04-arm
+    needs: test
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -53,5 +58,5 @@ jobs:
       - name: Trigger Rolling Restart and Verify Rollout
         run: |
           kubectl rollout restart deployment/travel-site-deployment
-          kubectl rollout status deployment/travel-site-deployment --timeout=180s
+          kubectl rollout status deployment/travel-site-deployment --timeout=300s
           echo "Rollout successfully completed."

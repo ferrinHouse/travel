@@ -1,11 +1,13 @@
 #!/bin/sh
 set -e
 
-# Ensure database directory exists
-mkdir -p /app/database
-
+DATABASE_URL="${DATABASE_URL:-file:/app/database/travel.db}"
 DB_FILE="${DATABASE_URL#file:}"
-BACKUP_DIR="$(dirname "$DB_FILE")/backups"
+DB_DIR="$(dirname "$DB_FILE")"
+BACKUP_DIR="$DB_DIR/backups"
+
+# Ensure database directory exists
+mkdir -p "$DB_DIR"
 
 # Back up the database before touching the schema; keep the 5 newest copies.
 if [ -f "$DB_FILE" ]; then

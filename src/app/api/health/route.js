@@ -1,13 +1,9 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
+import { checkHealth } from '@/lib/api/health';
 
-// Liveness/readiness probe target: confirms the app can reach SQLite.
+// Liveness/readiness probe target (see k8s/base/deployment.yaml).
 export async function GET() {
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    return NextResponse.json({ status: 'ok' });
-  } catch (error) {
-    console.error('Health check failed:', error);
-    return NextResponse.json({ status: 'error' }, { status: 503 });
-  }
+  const result = await checkHealth({ db: prisma });
+  return NextResponse.json(result.body, { status: result.status });
 }

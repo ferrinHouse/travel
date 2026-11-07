@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { ADMIN_COOKIE, isAdminRequest } from '@/lib/auth/legacy';
+import { verifyPasscode } from '@/lib/auth/passcode';
 
 export async function POST(request) {
   try {
-    const { passcode } = await request.json();
-    const adminPasscode = process.env.ADMIN_PASSCODE || 'admin';
+    const body = await request.json().catch(() => null);
 
-    if (passcode === adminPasscode) {
+    // No fallback passcode: if ADMIN_PASSCODE is unset, nothing unlocks.
+    if (verifyPasscode(body?.passcode, process.env.ADMIN_PASSCODE)) {
       const cookieStore = await cookies();
       cookieStore.set(ADMIN_COOKIE, 'true', {
         httpOnly: true,
