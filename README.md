@@ -86,12 +86,16 @@ travel/
 │   │   ├── layout.js            # Root HTML shell & metadata
 │   │   └── page.js              # Dashboard homepage (Upcoming & Past trips)
 │   ├── components/
-│   │   └── TripDetailsClient.js # Interactive client component for tabs, modals, and edit forms
+│   │   ├── trip/                # Trip detail page: tab shell + itinerary/logistics/checklist/meals tabs
+│   │   └── ui/                  # Shared UI kit: Modal, Toast, ConfirmDialog, Markdown, Skeleton
 │   └── lib/
 │       ├── db.js                # PrismaClient singleton with better-sqlite3 adapter
-│       └── helpers.js           # Time parsing, markdown rendering, meal icons, and date checks
+│       ├── helpers.js           # Time parsing, meal icons, and date checks
+│       ├── markdown.js          # Safe markdown renderer (escapes HTML, safe link schemes only)
+│       ├── trip-reducer.js      # Pure reducer for trip page state
+│       └── api-client.js        # fetch wrapper that throws on API errors
 ├── tests/
-│   └── helpers.test.mjs         # Unit tests for helper utilities
+│   └── *.test.mjs               # Unit tests for the pure modules in src/lib
 ├── Dockerfile                   # Multi-stage optimized Alpine Docker build
 ├── docker-entrypoint.sh         # Startup script running prisma db push before server.js
 ├── next.config.mjs              # Next.js config (output: "standalone")
@@ -147,11 +151,11 @@ Generate Prisma client artifacts, create the SQLite database schema, and seed th
 # Push schema to SQLite
 npx prisma db push
 
-# Seed trips, logistics, checklists, and days
-node prisma/seed.js
+# Seed trips, logistics, checklists, and days (wipes existing data, hence --force)
+node prisma/seed.js --force
 
 # Seed detailed meal planning and grocery items
-npm run seed:meals
+npm run seed:meals -- --force
 ```
 
 ### 4. Run Development Server
@@ -188,6 +192,7 @@ All API routes are located in `src/app/api/`:
 |---|---|---|---|
 | `POST` | `/api/auth` | No | Submit admin passcode; sets `admin_authenticated` HTTP-only cookie |
 | `GET` | `/api/auth` | No | Check if the current session has admin privileges |
+| `GET` | `/api/health` | No | Health probe (checks the database connection) |
 | `DELETE` | `/api/auth` | No | Clear admin session cookie (lock edit mode) |
 | `POST` | `/api/activities` | **Yes** | Update activity details, time, or alert status |
 | `PUT` | `/api/activities` | **Yes** | Create a new activity for a trip day |
@@ -195,7 +200,7 @@ All API routes are located in `src/app/api/`:
 | `POST` | `/api/checklist` | *Conditional* | Toggle status (Open); create item or update text (**Yes**) |
 | `DELETE` | `/api/checklist` | **Yes** | Delete a checklist item |
 | `POST` | `/api/grocery` | No | Toggle `isBought` status of a grocery item |
-| `PUT` | `/api/grocery` | No | Add a new custom grocery item |
+| `PUT` | `/api/grocery` | **Yes** | Add a new custom grocery item |
 | `POST` | `/api/logistics` | **Yes** | Create or update a logistics card |
 | `DELETE` | `/api/logistics` | **Yes** | Delete a logistics card |
 | `POST` | `/api/meals` | **Yes** | Upsert a meal plan record for a given day and meal type |
@@ -220,7 +225,7 @@ docker run -p 3000:3000 \
   travel-site:latest
 ```
 
-The container entrypoint (`docker-entrypoint.sh`) executes `prisma db push` on startup to guarantee migrations are applied before starting `server.js`.
+The container entrypoint (`docker-entrypoint.sh`) copies the database to `database/backups/` (keeping the 5 newest), then runs `prisma db push` before starting `server.js`. The push runs **without** `--accept-data-loss`, so a schema change that would drop data stops the rollout instead of deleting it. `GET /api/health` backs the startup, readiness and liveness probes.
 
 ### Kubernetes & Kustomize
 

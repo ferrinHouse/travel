@@ -1,16 +1,11 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import prisma from '@/lib/db';
-
-async function checkAuth() {
-  const cookieStore = await cookies();
-  return cookieStore.get('admin_authenticated')?.value === 'true';
-}
+import { isAdminRequest, unauthorized } from '@/lib/auth/legacy';
 
 export async function POST(request) {
   try {
-    if (!await checkAuth()) {
-      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    if (!await isAdminRequest()) {
+      return unauthorized();
     }
 
     const { id, time, description, details, isAlert } = await request.json();
@@ -33,8 +28,8 @@ export async function POST(request) {
 
 export async function PUT(request) {
   try {
-    if (!await checkAuth()) {
-      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    if (!await isAdminRequest()) {
+      return unauthorized();
     }
 
     const { dayId, time, description, details, isAlert } = await request.json();
@@ -63,8 +58,8 @@ export async function PUT(request) {
 
 export async function DELETE(request) {
   try {
-    if (!await checkAuth()) {
-      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    if (!await isAdminRequest()) {
+      return unauthorized();
     }
 
     const { id } = await request.json();

@@ -1,4 +1,5 @@
 import "./globals.css";
+import Providers from "@/components/ui/Providers";
 
 export const metadata = {
   title: "Family Travel Adventures",
@@ -8,10 +9,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <head>
-        <link rel="icon" href="/favicon.ico" />
-      </head>
-      <body>{children}</body>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

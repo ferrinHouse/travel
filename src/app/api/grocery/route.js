@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
+import { isAdminRequest, unauthorized } from '@/lib/auth/legacy';
 
 export async function POST(request) {
   try {
@@ -23,6 +24,10 @@ export async function POST(request) {
 
 export async function PUT(request) {
   try {
+    if (!await isAdminRequest()) {
+      return unauthorized();
+    }
+
     const { tripId, name, category } = await request.json();
 
     if (!tripId || !name || !category) {

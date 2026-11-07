@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import prisma from '@/lib/db';
+import { isTripPast } from '@/lib/helpers';
 
 export const revalidate = 0; // Disable caching to ensure updates are instantly visible
 
@@ -15,21 +16,10 @@ async function getTrips() {
 export default async function DashboardPage() {
   const trips = await getTrips();
   
+  // A trip stays "upcoming" through its last day (see isTripPast).
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  // Determine if a trip has finished based on dates
-  const isTripPast = (trip) => {
-    if (trip.endDate) {
-      const tripEnd = new Date(trip.endDate);
-      tripEnd.setHours(23, 59, 59, 999);
-      return tripEnd < today;
-    }
-    return trip.status === 'past'; // Fallback
-  };
-
-  const upcoming = trips.filter(trip => !isTripPast(trip));
-  const past = trips.filter(trip => isTripPast(trip));
+  const upcoming = trips.filter(trip => !isTripPast(trip, today));
+  const past = trips.filter(trip => isTripPast(trip, today));
 
   // Sort upcoming chronologically ascending (closest trip first)
   const upcomingTrips = upcoming.sort((a, b) => {

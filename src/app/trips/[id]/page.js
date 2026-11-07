@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import prisma from '@/lib/db';
-import TripDetailsClient from '@/components/TripDetailsClient';
+import TripDetailsClient from '@/components/trip/TripDetailsClient';
 
 export const revalidate = 0; // Disable cache for live updates
 
@@ -37,8 +37,9 @@ async function getTripDetails(id) {
   }
 }
 
-export default async function TripDetailsPage({ params }) {
+export default async function TripDetailsPage({ params, searchParams }) {
   const { id } = await params;
+  const { tab } = await searchParams;
   const trip = await getTripDetails(id);
 
   if (!trip) {
@@ -63,7 +64,7 @@ export default async function TripDetailsPage({ params }) {
       </header>
 
       <main className="container">
-        <TripDetailsClient initialTrip={trip} />
+        <TripDetailsClient initialTrip={trip} initialTab={typeof tab === 'string' ? tab : undefined} />
       </main>
     </div>
   );

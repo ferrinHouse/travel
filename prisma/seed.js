@@ -6,6 +6,14 @@ const prisma = new PrismaClient({ adapter });
 
 
 
+// This script deletes existing data before seeding. Trips created in the app
+// would be lost, so require an explicit opt-in.
+if (process.env.ALLOW_DESTRUCTIVE_SEED !== '1' && !process.argv.includes('--force')) {
+  console.error('Refusing to run: seed.js deletes existing trip data first.');
+  console.error('Re-run with --force (or ALLOW_DESTRUCTIVE_SEED=1) if that is what you want.');
+  process.exit(1);
+}
+
 async function main() {
   console.log('Clearing database...');
   await prisma.checklistItem.deleteMany();

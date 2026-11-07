@@ -1,0 +1,304 @@
+/* Edit mode bar */
+.editBar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.editStatus {
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: var(--text-muted);
+}
+
+.editStatusOn {
+  color: var(--success-color);
+}
+
+.centerActions {
+  justify-content: center;
+}
+
+.lockHint {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 0 0 20px 0;
+}
+
+/* Itinerary */
+.dayCard {
+  margin-bottom: 24px;
+}
+
+.timeline {
+  padding-left: 10px;
+}
+
+.activityRow {
+  border-bottom: 1px solid var(--border-color);
+  padding: 16px 0;
+}
+
+.activityTitle {
+  font-size: 1.05rem;
+}
+
+.activityDetails {
+  margin: 8px 0 0 0;
+  color: #555;
+  white-space: pre-wrap;
+  font-style: italic;
+  font-size: 0.92rem;
+  border-left: 3px solid #ccc;
+  padding-left: 10px;
+}
+
+.mealNote {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 4px;
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.addArea {
+  margin-top: 20px;
+}
+
+.addBox {
+  padding: 16px;
+  border: 1px dashed var(--accent-color);
+  border-radius: 8px;
+}
+
+.dashedButton {
+  width: 100%;
+  border-style: dashed;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+/* Logistics */
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.cardTitle {
+  margin: 0;
+  color: var(--primary-color);
+}
+
+.logisticsContent {
+  white-space: pre-wrap;
+  color: #444;
+  line-height: 1.5;
+}
+
+.logisticsAdd {
+  max-width: 600px;
+  margin: 30px auto 0 auto;
+}
+
+.centered {
+  text-align: center;
+}
+
+.spaceBetween {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+/* Checklist */
+.listHeading {
+  text-transform: uppercase;
+  font-size: 1.1rem;
+  border-bottom: 2px solid var(--accent-color);
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+}
+
+.checkRow {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.checkMain {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.checkLabel {
+  cursor: pointer;
+}
+
+.inlineInput {
+  margin: 0;
+  padding: 4px 8px;
+  font-size: 0.9rem;
+  flex-grow: 1;
+}
+
+.rowActions {
+  display: flex;
+  gap: 8px;
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+
+.addRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 12px;
+}
+
+.addInput {
+  margin: 0;
+  flex-grow: 1;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+}
+
+.emptyNote {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Meals & groceries */
+.mealsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 450px), 1fr));
+  gap: 30px;
+}
+
+.sectionHeading {
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--accent-color);
+  padding-bottom: 8px;
+  margin-bottom: 20px;
+}
+
+.mealDay {
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 15px;
+}
+
+.mealDayLabel {
+  color: var(--accent-color);
+  margin-bottom: 8px;
+}
+
+.mealGrid {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.mealType {
+  font-weight: bold;
+  font-size: 0.85rem;
+}
+
+.mealInputs {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  align-items: center;
+}
+
+.mealNameInput {
+  flex-grow: 2;
+  margin: 0;
+  min-width: 0;
+}
+
+.mealTimeInput {
+  width: 110px;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.mealTime {
+  color: var(--accent-color);
+  font-weight: bold;
+  font-size: 0.85rem;
+}
+
+.notPlanned {
+  color: #aaa;
+  font-style: italic;
+}
+
+.saveState {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  width: 14px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.saveError {
+  color: var(--danger-color);
+}
+
+.groceryCategory {
+  text-transform: capitalize;
+}
+
+.groceryForm {
+  margin-top: 30px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 20px;
+}
+
+.groceryInputs {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.groceryName {
+  flex: 1 1 180px;
+  margin: 0;
+}
+
+.grocerySelect {
+  width: 150px;
+  margin: 0;
+}
+
+@media (max-width: 480px) {
+  .mealGrid {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .mealType {
+    margin-top: 8px;
+  }
+}

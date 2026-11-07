@@ -34,30 +34,8 @@ export const getMealIcon = (type) => {
   return '🍽️';
 };
 
-/**
- * Escapes HTML characters and parses basic markdown links, bold text, and italics.
- */
-export const renderMarkdown = (text) => {
-  if (!text) return '';
-  let html = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-  
-  // Bold: **text**
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  
-  // Italic: *text*
-  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-  
-  // Links: [label](url)
-  html = html.replace(
-    /\[(.*?)\]\((.*?)\)/g, 
-    '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline; font-weight: 500;">$1</a>'
-  );
-  
-  return html;
-};
+// Safe markdown rendering lives in its own module; re-exported for existing callers.
+export { renderMarkdown } from './markdown.js';
 
 /**
  * Checks if a trip's end date is before today, determining if it should be archived.

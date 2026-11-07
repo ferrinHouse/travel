@@ -1,11 +1,6 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import prisma from '@/lib/db';
-
-async function checkAuth() {
-  const cookieStore = await cookies();
-  return cookieStore.get('admin_authenticated')?.value === 'true';
-}
+import { isAdminRequest, unauthorized } from '@/lib/auth/legacy';
 
 export async function POST(request) {
   try {
@@ -13,8 +8,8 @@ export async function POST(request) {
     
     // 1. Create a new checklist item (requires admin authentication)
     if (body.tripId && body.text && body.category && !body.id) {
-      if (!await checkAuth()) {
-        return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+      if (!await isAdminRequest()) {
+        return unauthorized();
       }
 
       const newItem = await prisma.checklistItem.create({
@@ -40,8 +35,8 @@ export async function POST(request) {
     }
     
     if (typeof text === 'string') {
-      if (!await checkAuth()) {
-        return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+      if (!await isAdminRequest()) {
+        return unauthorized();
       }
       updateData.text = text;
     }
@@ -60,8 +55,8 @@ export async function POST(request) {
 
 export async function DELETE(request) {
   try {
-    if (!await checkAuth()) {
-      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    if (!await isAdminRequest()) {
+      return unauthorized();
     }
 
     const { id } = await request.json();
