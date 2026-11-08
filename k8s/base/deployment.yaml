@@ -4,6 +4,9 @@ metadata:
   name: travel-site-deployment
 spec:
   replicas: 1
+  # SQLite lives on NFS: never run two pods against it at once, even during a rollout.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: travel-site
@@ -34,11 +37,33 @@ spec:
               value: "file:/app/database/travel.db"
             - name: PORT
               value: "3000"
+            # Trip dates are family-local; decide "past"/"today" in Central time.
+            - name: TZ
+              value: "America/Chicago"
             - name: ADMIN_PASSCODE
               valueFrom:
                 secretKeyRef:
                   name: travel-secrets
                   key: ADMIN_PASSCODE
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            periodSeconds: 5
+            failureThreshold: 36 # allow up to 3 min for backup + db push on NFS
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
           volumeMounts:
             - name: database-volume
               mountPath: /app/database

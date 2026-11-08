@@ -1,12 +1,28 @@
 #!/bin/sh
 set -e
 
-# Ensure database directory exists
-mkdir -p /app/database
+DATABASE_URL="${DATABASE_URL:-file:/app/database/travel.db}"
+DB_FILE="${DATABASE_URL#file:}"
+DB_DIR="$(dirname "$DB_FILE")"
+BACKUP_DIR="$DB_DIR/backups"
 
-# Run Prisma schema push to ensure database structure is initialized/updated
+# Ensure database directory exists
+mkdir -p "$DB_DIR"
+
+# Back up the database before touching the schema; keep the 5 newest copies.
+if [ -f "$DB_FILE" ]; then
+  mkdir -p "$BACKUP_DIR"
+  BACKUP="$BACKUP_DIR/$(basename "$DB_FILE").bak-$(date +%Y%m%d%H%M%S)"
+  cp "$DB_FILE" "$BACKUP"
+  echo "Backed up database to $BACKUP"
+  ls -1t "$BACKUP_DIR"/*.bak-* 2>/dev/null | tail -n +6 | xargs -r rm -f --
+fi
+
+# Sync the schema. No --accept-data-loss: a change that would drop data must
+# fail the rollout (and keep the old pod's data intact) instead of silently
+# deleting columns. set -e stops startup if the push fails.
 echo "Running Prisma db push..."
-npx prisma db push --accept-data-loss || echo "Prisma push warning (continuing...)"
+npx prisma db push
 
 # Start the standalone Next.js application
 echo "Starting Next.js..."

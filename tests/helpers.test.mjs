@@ -41,24 +41,9 @@ test('getMealIcon should return correct emoji', () => {
   assert.strictEqual(getMealIcon('Unknown'), '🍽️'); // Default
 });
 
-test('renderMarkdown should escape HTML and render markdown elements', () => {
-  // Bold & Italic
-  assert.strictEqual(
-    renderMarkdown('This is **bold** and *italic* text.'),
-    'This is <strong>bold</strong> and <em>italic</em> text.'
-  );
-
-  // Hyperlinks
-  assert.strictEqual(
-    renderMarkdown('Go to [Google](https://google.com).'),
-    'Go to <a href="https://google.com" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline; font-weight: 500;">Google</a>.'
-  );
-
-  // HTML escaping
-  assert.strictEqual(
-    renderMarkdown('Check out <script>alert(1)</script> & enjoy!'),
-    'Check out &lt;script&gt;alert(1)&lt;/script&gt; &amp; enjoy!'
-  );
+test('helpers re-exports the safe renderMarkdown', () => {
+  assert.strictEqual(renderMarkdown('**hi** <b>'), '<strong>hi</strong> &lt;b&gt;');
+  assert.ok(!renderMarkdown('[x](javascript:alert(1))').includes('<a'));
 });
 
 test('isTripPast should check trip status based on endDate vs today', () => {
@@ -82,4 +67,21 @@ test('isTripPast should check trip status based on endDate vs today', () => {
   
   const fallbackFuture = { endDate: null, status: 'upcoming' };
   assert.strictEqual(isTripPast(fallbackFuture, mockToday), false);
+});
+
+test('isTripPast uses the local calendar day (container TZ) for "today"', () => {
+  const originalTz = process.env.TZ;
+  process.env.TZ = 'America/Chicago';
+  try {
+    // 03:00 UTC on June 26 is still the evening of June 25 in Chicago.
+    const lateEvening = new Date('2026-06-26T03:00:00Z');
+    const trip = { endDate: '2026-06-25T00:00:00Z', status: 'upcoming' };
+    assert.strictEqual(isTripPast(trip, lateEvening), false);
+
+    // Next morning in Chicago it is past.
+    assert.strictEqual(isTripPast(trip, new Date('2026-06-26T14:00:00Z')), true);
+  } finally {
+    if (originalTz === undefined) delete process.env.TZ;
+    else process.env.TZ = originalTz;
+  }
 });

@@ -1,14 +1,16 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { ADMIN_COOKIE, isAdminRequest } from '@/lib/auth/legacy';
+import { verifyPasscode } from '@/lib/auth/passcode';
 
 export async function POST(request) {
   try {
-    const { passcode } = await request.json();
-    const adminPasscode = process.env.ADMIN_PASSCODE || 'admin';
+    const body = await request.json().catch(() => null);
 
-    if (passcode === adminPasscode) {
+    // No fallback passcode: if ADMIN_PASSCODE is unset, nothing unlocks.
+    if (verifyPasscode(body?.passcode, process.env.ADMIN_PASSCODE)) {
       const cookieStore = await cookies();
-      cookieStore.set('admin_authenticated', 'true', {
+      cookieStore.set(ADMIN_COOKIE, 'true', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
@@ -25,13 +27,11 @@ export async function POST(request) {
 }
 
 export async function GET() {
-  const cookieStore = await cookies();
-  const isAuthenticated = cookieStore.get('admin_authenticated')?.value === 'true';
-  return NextResponse.json({ authenticated: isAuthenticated });
+  return NextResponse.json({ authenticated: await isAdminRequest() });
 }
 
 export async function DELETE() {
   const cookieStore = await cookies();
-  cookieStore.delete('admin_authenticated');
+  cookieStore.delete(ADMIN_COOKIE);
   return NextResponse.json({ success: true });
 }
