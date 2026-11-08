@@ -1,40 +1,40 @@
+import { cache } from 'react';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 import prisma from '@/lib/db';
+import { tripTheme } from '@/lib/color';
+import { tripPhase } from '@/lib/trip-status';
+import TripHero from '@/components/trips/TripHero';
 import TripDetailsClient from '@/components/trip/TripDetailsClient';
 
-export const revalidate = 0; // Disable cache for live updates
+export const revalidate = 0; // Always render fresh so edits show immediately
 
-async function getTripDetails(id) {
+// cache() so generateMetadata and the page share one query per request.
+const getTripDetails = cache(async (id) => {
   try {
-    const trip = await prisma.trip.findUnique({
+    return await prisma.trip.findUnique({
       where: { id },
       include: {
-        checklist: {
-          orderBy: { id: 'asc' }
-        },
-        logistics: {
-          orderBy: { order: 'asc' }
-        },
+        checklist: { orderBy: { id: 'asc' } },
+        logistics: { orderBy: { order: 'asc' } },
         days: {
           orderBy: { dayNumber: 'asc' },
-          include: {
-            activities: {
-              orderBy: { order: 'asc' }
-            }
-          }
+          include: { activities: { orderBy: { order: 'asc' } } },
         },
         meals: true,
-        groceries: {
-          orderBy: { id: 'asc' }
-        }
-      }
+        groceries: { orderBy: { id: 'asc' } },
+      },
     });
-    return trip;
   } catch (error) {
     console.error('Error fetching trip details:', error);
     return null;
   }
+});
+
+export async function generateMetadata({ params }) {
+  const { id } = await params;
+  const trip = await getTripDetails(id);
+  if (!trip) return { title: 'Trip not found' };
+  return { title: trip.name, description: trip.description || `${trip.name}: ${trip.dates}` };
 }
 
 export default async function TripDetailsPage({ params, searchParams }) {
@@ -46,25 +46,15 @@ export default async function TripDetailsPage({ params, searchParams }) {
     notFound();
   }
 
-  return (
-    <div>
-      <header style={{ 
-        background: `linear-gradient(135deg, ${trip.primaryColor || 'var(--primary-color)'} 0%, #1a252f 100%)` 
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
-          <Link href="/" style={{ color: 'white', fontSize: '1rem', fontWeight: 'bold' }}>
-            ← Back to Adventures
-          </Link>
-          <div style={{ flexGrow: 1, textAlign: 'center' }}>
-            <h1 style={{ margin: 0 }}>{trip.name}</h1>
-            <p style={{ margin: '5px 0 0 0' }}>{trip.dates} &bull; {trip.travelers}</p>
-          </div>
-          <div style={{ width: '130px' }} /> {/* Spacer */}
-        </div>
-      </header>
+  // Only what the client needs; raw colours and other fields stay on the server.
+  const { startDate, endDate, status, days, meals, checklist, logistics, groceries } = trip;
+  const clientTrip = { id: trip.id, startDate, endDate, status, days, meals, checklist, logistics, groceries };
 
-      <main className="container">
-        <TripDetailsClient initialTrip={trip} initialTab={typeof tab === 'string' ? tab : undefined} />
+  return (
+    <div data-trip={trip.id} style={tripTheme(trip)}>
+      <TripHero trip={trip} status={tripPhase(trip)} />
+      <main className="container has-tabbar">
+        <TripDetailsClient initialTrip={clientTrip} initialTab={typeof tab === 'string' ? tab : undefined} />
       </main>
     </div>
   );

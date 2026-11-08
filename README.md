@@ -8,7 +8,10 @@ A modern, responsive travel companion and itinerary management web application b
 
 - **Dynamic Trip Dashboard**:
   - Automatically categorizes adventures into **Upcoming Trips** and **Past Adventures** based on calendar end-dates.
-  - Custom color palettes and themes per trip (e.g., Chicago, Boston, Hawaii).
+  - Custom color palettes and themes per trip (e.g., Chicago, Boston, Hawaii), automatically adjusted to stay readable (WCAG AA).
+  - Light and dark mode (follows the device, or pick one), with no flash on load.
+  - Trip hero with a countdown, or "Day 3 of 6" while you're there, with today's plan highlighted and the next activity marked.
+  - Phone-friendly bottom tab bar.
   - Quick metadata overview (dates, travel group, tags, descriptions).
 
 - **Unified Day-by-Day Itinerary**:
@@ -83,16 +86,21 @@ travel/
 │   │   │   ├── logistics/       # Logistics info cards
 │   │   │   └── meals/           # Meal planner upserts
 │   │   ├── trips/[id]/          # Dynamic trip detail page with tabbed view
-│   │   ├── globals.css          # Core design system, variables, and responsive layout
-│   │   ├── layout.js            # Root HTML shell & metadata
+│   │   ├── layout.js            # Root HTML shell, fonts, metadata, no-flash theme script
 │   │   └── page.js              # Dashboard homepage (Upcoming & Past trips)
 │   ├── components/
+│   │   ├── site/                # Sticky site header + System/Light/Dark theme switch
 │   │   ├── trip/                # Trip detail page: tab shell + itinerary/logistics/checklist/meals tabs
+│   │   ├── trips/               # Trip hero, dashboard cards, featured "next adventure"
 │   │   └── ui/                  # Shared UI kit: Modal, Toast, ConfirmDialog, Markdown, Skeleton
+│   ├── styles/                  # Design tokens (light/dark), base, components, utilities
 │   └── lib/
 │       ├── db.js                # PrismaClient singleton with better-sqlite3 adapter
 │       ├── helpers.js           # Time parsing, meal icons, and date checks
 │       ├── markdown.js          # Safe markdown renderer (escapes HTML, safe link schemes only)
+│       ├── color.js             # Per-trip colours → contrast-checked CSS variables
+│       ├── theme.js             # Theme preference + inline no-flash script
+│       ├── trip-status.js       # Countdown / "Day N of M" / past
 │       ├── trip-reducer.js      # Pure reducer for trip page state
 │       └── api-client.js        # fetch wrapper that throws on API errors
 ├── tests/

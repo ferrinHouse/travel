@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { buildDayTimeline } from '@/lib/itinerary';
+import { buildDayTimeline, nextUpId } from '@/lib/itinerary';
 import { apiFetch } from '@/lib/api-client';
 import { useToast } from '@/components/ui/Toast';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
@@ -10,7 +10,9 @@ import ActivityItem from './ActivityItem';
 import ActivityForm from './ActivityForm';
 import styles from '../trip.module.css';
 
-export default function DayCard({ day }) {
+export const dayAnchor = (dayNumber) => `day-${dayNumber}`;
+
+export default function DayCard({ day, isToday = false, nowMinutes = null }) {
   const { trip, dispatch, canEdit } = useTrip();
   const toast = useToast();
   const confirm = useConfirm();
@@ -18,6 +20,7 @@ export default function DayCard({ day }) {
   const [adding, setAdding] = useState(false);
 
   const timeline = useMemo(() => buildDayTimeline(day, trip.meals), [day, trip.meals]);
+  const nextId = nowMinutes == null ? null : nextUpId(timeline, nowMinutes);
 
   const saveEdit = async (id, values) => {
     try {
@@ -57,11 +60,18 @@ export default function DayCard({ day }) {
   };
 
   return (
-    <section className={`itinerary-day card ${styles.dayCard}`} aria-label={day.dateLabel}>
+    <section
+      id={dayAnchor(day.dayNumber)}
+      className={`itinerary-day card ${styles.dayCard}`}
+      aria-label={day.dateLabel}
+      aria-current={isToday ? 'date' : undefined}
+    >
       <div className="itinerary-day-header">
         <h2 className="itinerary-day-title">
-          {day.dateLabel} {day.title ? `— ${day.title}` : ''}
+          {day.dateLabel}
+          {day.title && <span className="itinerary-day-subtitle"> — {day.title}</span>}
         </h2>
+        {isToday && <span className="today-badge">Today</span>}
       </div>
 
       <div className={styles.timeline}>
@@ -80,6 +90,7 @@ export default function DayCard({ day }) {
             <ActivityItem
               key={act.id}
               activity={act}
+              isNext={act.id === nextId}
               canEdit={canEdit}
               onEdit={() => setEditingId(act.id)}
               onDelete={() => remove(act)}

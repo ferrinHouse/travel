@@ -3,22 +3,30 @@
 import { useEffect, useRef } from 'react';
 
 export const TABS = [
-  { id: 'itinerary', label: '🗓️ Daily Itinerary' },
-  { id: 'logistics', label: '✈️ Logistics' },
-  { id: 'checklist', label: '✅ Packing & Tasks' },
-  { id: 'meals', label: '🥣 Meals & Groceries' },
+  { id: 'itinerary', icon: '🗓️', label: 'Daily Itinerary', short: 'Itinerary' },
+  { id: 'logistics', icon: '✈️', label: 'Logistics', short: 'Logistics' },
+  { id: 'checklist', icon: '✅', label: 'Packing & Tasks', short: 'Packing' },
+  { id: 'meals', icon: '🥣', label: 'Meals & Groceries', short: 'Meals' },
 ];
 
 export const tabId = (id) => `trip-tab-${id}`;
 export const panelId = (id) => `trip-panel-${id}`;
 
-/** WAI-ARIA tablist: arrow keys / Home / End move between tabs. */
+/**
+ * WAI-ARIA tablist: arrow keys / Home / End move between tabs. Inline under
+ * the hero on wide screens; a fixed bottom bar on phones (see components.css).
+ */
 export default function TripTabs({ active, onChange }) {
+  const listRef = useRef(null);
   const refs = useRef({});
 
-  // On narrow screens the tab bar scrolls sideways; keep the active tab visible.
+  // If the inline bar overflows sideways, keep the active tab in view
+  // (scrolling only the bar, never the page).
   useEffect(() => {
-    refs.current[active]?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    const list = listRef.current;
+    const tab = refs.current[active];
+    if (!list || !tab || list.scrollWidth <= list.clientWidth) return;
+    list.scrollTo({ left: tab.offsetLeft - (list.clientWidth - tab.offsetWidth) / 2 });
   }, [active]);
 
   const focusTab = (index) => {
@@ -38,7 +46,7 @@ export default function TripTabs({ active, onChange }) {
   };
 
   return (
-    <div className="tabs" role="tablist" aria-label="Trip sections" onKeyDown={onKeyDown}>
+    <div ref={listRef} className="tabs" role="tablist" aria-label="Trip sections" onKeyDown={onKeyDown}>
       {TABS.map((tab) => {
         const selected = tab.id === active;
         return (
@@ -56,7 +64,11 @@ export default function TripTabs({ active, onChange }) {
             className={`tab-btn ${selected ? 'active' : ''}`}
             onClick={() => onChange(tab.id)}
           >
-            {tab.label}
+            <span className="tab-icon" aria-hidden="true">
+              {tab.icon}
+            </span>{' '}
+            <span className="tab-label">{tab.label}</span>
+            <span className="tab-short">{tab.short}</span>
           </button>
         );
       })}

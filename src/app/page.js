@@ -1,8 +1,10 @@
-import Link from 'next/link';
 import prisma from '@/lib/db';
-import { isTripPast } from '@/lib/helpers';
+import { tripPhase } from '@/lib/trip-status';
+import EmptyState from '@/components/ui/EmptyState';
+import TripCard from '@/components/trips/TripCard';
+import FeaturedTrip from '@/components/trips/FeaturedTrip';
 
-export const revalidate = 0; // Disable caching to ensure updates are instantly visible
+export const revalidate = 0; // Always render fresh so edits show immediately
 
 async function getTrips() {
   try {
@@ -13,105 +15,71 @@ async function getTrips() {
   }
 }
 
+const time = (value) => (value ? new Date(value).getTime() : Infinity);
+
 export default async function DashboardPage() {
-  const trips = await getTrips();
-  
-  // A trip stays "upcoming" through its last day (see isTripPast).
   const today = new Date();
-  const upcoming = trips.filter(trip => !isTripPast(trip, today));
-  const past = trips.filter(trip => isTripPast(trip, today));
+  const trips = (await getTrips()).map((trip) => ({ trip, status: tripPhase(trip, today) }));
 
-  // Sort upcoming chronologically ascending (closest trip first)
-  const upcomingTrips = upcoming.sort((a, b) => {
-    if (!a.startDate) return 1;
-    if (!b.startDate) return -1;
-    return new Date(a.startDate) - new Date(b.startDate);
-  });
-
-  // Sort past chronologically descending (most recent past adventure first)
-  const pastTrips = past.sort((a, b) => {
-    if (!a.endDate) return 1;
-    if (!b.endDate) return -1;
-    return new Date(b.endDate) - new Date(a.endDate);
-  });
-
-  const getTagClass = (tag) => {
-    const cleanTag = tag.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    if (cleanTag.includes('city')) return 'tag-city';
-    if (cleanTag.includes('beach')) return 'tag-beach';
-    if (cleanTag.includes('island')) return 'tag-island';
-    if (cleanTag.includes('nature') || cleanTag.includes('park')) return 'tag-nature';
-    return 'tag-sea';
-  };
+  // Soonest first; a trip stays upcoming through its last day.
+  const upcoming = trips
+    .filter((t) => t.status.phase !== 'past')
+    .sort((a, b) => time(a.trip.startDate) - time(b.trip.startDate));
+  // Most recent first.
+  const past = trips
+    .filter((t) => t.status.phase === 'past')
+    .sort((a, b) => time(b.trip.endDate) - time(a.trip.endDate));
+  const [featured, ...later] = upcoming;
 
   return (
-    <div>
-      <header>
-        <h1>Family Adventures</h1>
-        <p>Our upcoming plans and past memories</p>
+    <>
+      <header className="hero">
+        <div className="hero-inner">
+          <h1>Family Adventures</h1>
+          <p>Our upcoming plans and past memories.</p>
+        </div>
       </header>
 
       <main className="container">
-        {/* Upcoming Trips */}
-        <section style={{ marginTop: '20px' }}>
-          <h2 style={{ borderBottom: '2px solid var(--accent-color)', paddingBottom: '8px', color: 'var(--primary-color)' }}>
-            Upcoming Trips
+        <section className="section" aria-labelledby="upcoming-title">
+          <h2 id="upcoming-title" className="section-title">
+            Upcoming Trips <span className="section-count">{upcoming.length}</span>
           </h2>
-          {upcomingTrips.length === 0 ? (
-            <p style={{ color: 'var(--text-muted)', margin: '20px 0' }}>No upcoming trips planned yet.</p>
-          ) : (
-            <div className="grid">
-              {upcomingTrips.map(trip => (
-                <div key={trip.id} className="card">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.4rem', color: 'var(--primary-color)' }}>{trip.name}</h3>
-                    <span className={`tag ${getTagClass(trip.tag)}`}>{trip.tag}</span>
-                  </div>
-                  <span style={{ fontSize: '0.9rem', color: 'var(--accent-color)', fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>
-                    {trip.dates}
-                  </span>
-                  <p style={{ color: 'var(--text-color)', fontSize: '0.95rem', marginBottom: '20px', minHeight: '48px' }}>
-                    {trip.description}
-                  </p>
-                  <Link href={`/trips/${trip.id}`} className="btn" style={{ width: '100%' }}>
-                    View Itinerary
-                  </Link>
+          {featured ? (
+            <>
+              <FeaturedTrip trip={featured.trip} status={featured.status} />
+              {later.length > 0 && (
+                <div className="grid">
+                  {later.map(({ trip, status }) => (
+                    <TripCard key={trip.id} trip={trip} status={status} />
+                  ))}
                 </div>
-              ))}
+              )}
+            </>
+          ) : (
+            <div className="card">
+              <EmptyState icon="🧳" title="No upcoming trips planned yet." />
             </div>
           )}
         </section>
 
-        {/* Past Adventures */}
-        <section style={{ marginTop: '50px', marginBottom: '40px' }}>
-          <h2 style={{ borderBottom: '2px solid #95a5a6', paddingBottom: '8px', color: '#7f8c8d' }}>
-            Past Adventures
+        <section className="section" aria-labelledby="past-title">
+          <h2 id="past-title" className="section-title">
+            Past Adventures <span className="section-count">{past.length}</span>
           </h2>
-          {pastTrips.length === 0 ? (
-            <p style={{ color: 'var(--text-muted)', margin: '20px 0' }}>No past adventures recorded.</p>
+          {past.length === 0 ? (
+            <div className="card">
+              <EmptyState icon="📷" title="No past adventures recorded." />
+            </div>
           ) : (
             <div className="grid">
-              {pastTrips.map(trip => (
-                <div key={trip.id} className="card" style={{ opacity: 0.9 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.4rem', color: '#555' }}>{trip.name}</h3>
-                    <span className={`tag ${getTagClass(trip.tag)}`} style={{ filter: 'grayscale(30%)' }}>{trip.tag}</span>
-                  </div>
-                  <span style={{ fontSize: '0.9rem', color: '#7f8c8d', fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>
-                    {trip.dates}
-                  </span>
-                  <p style={{ color: '#555', fontSize: '0.95rem', marginBottom: '20px', minHeight: '48px' }}>
-                    {trip.description}
-                  </p>
-                  <Link href={`/trips/${trip.id}`} className="btn btn-secondary" style={{ width: '100%', backgroundColor: '#7f8c8d' }}>
-                    View Details
-                  </Link>
-                </div>
+              {past.map(({ trip, status }) => (
+                <TripCard key={trip.id} trip={trip} status={status} />
               ))}
             </div>
           )}
         </section>
       </main>
-    </div>
+    </>
   );
 }

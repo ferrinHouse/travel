@@ -1,0 +1,207 @@
+/* Element defaults and page-level layout. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--site-header-h) + var(--space-4));
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+  line-height: var(--leading);
+  background-color: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  /* No colour transition: inherited text would fade while cards switch instantly. */
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  line-height: var(--leading-tight);
+  color: var(--heading);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  margin: 0 0 var(--space-3);
+}
+
+h1 { font-size: var(--step-4); }
+h2 { font-size: var(--step-3); }
+h3 { font-size: var(--step-2); }
+h4 { font-size: var(--step-1); }
+
+p {
+  margin: 0 0 var(--space-4);
+}
+
+a {
+  color: var(--link);
+  text-decoration: none;
+  font-weight: 500;
+  text-underline-offset: 0.2em;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+::selection {
+  background-color: color-mix(in oklch, var(--link) 30%, transparent);
+}
+
+.container {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--space-6) var(--gutter) var(--space-12);
+}
+
+/* Compact sticky bar on every page: home link + theme switch */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  height: var(--site-header-h);
+  background-color: color-mix(in oklch, var(--surface) 85%, transparent);
+  backdrop-filter: saturate(1.4) blur(12px);
+  -webkit-backdrop-filter: saturate(1.4) blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.site-header-inner {
+  max-width: var(--content-max);
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.site-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  font-family: var(--font-display);
+  font-weight: 650;
+  font-size: var(--step-1);
+  color: var(--heading);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.site-brand:hover {
+  text-decoration: none;
+  color: var(--link);
+}
+
+/* Big gradient headers (dashboard intro and trip hero) */
+.hero {
+  position: relative;
+  overflow: hidden;
+  color: var(--on-hero);
+  background:
+    radial-gradient(120% 140% at 100% 0%, color-mix(in oklch, var(--on-hero) 14%, transparent) 0%, transparent 55%),
+    linear-gradient(135deg, var(--hero-start) 0%, var(--hero-end) 100%);
+}
+
+.hero-inner {
+  position: relative;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: clamp(var(--space-8), 6vw, var(--space-16)) var(--gutter);
+}
+
+.hero h1 {
+  color: var(--on-hero);
+  margin: var(--space-3) 0 var(--space-2);
+  text-wrap: balance;
+}
+
+.hero p {
+  margin: 0;
+  max-width: 60ch;
+  font-size: var(--step-1);
+}
+
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-4);
+  font-size: var(--step-0);
+}
+
+.hero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  font-size: var(--step--1);
+  letter-spacing: 0.02em;
+  color: var(--on-hero);
+  border: 1px solid color-mix(in oklch, var(--on-hero) 45%, transparent);
+  background-color: color-mix(in oklch, var(--hero-end) 55%, transparent);
+}
+
+/* Section headings on the dashboard */
+.section {
+  margin-top: var(--space-10);
+}
+
+.section:first-child {
+  margin-top: 0;
+}
+
+.section-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  font-size: var(--step-3);
+  margin-bottom: var(--space-6);
+}
+
+.section-count {
+  font-family: var(--font-body);
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

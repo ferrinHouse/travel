@@ -7,6 +7,10 @@ import { fitsWidth, openTrip, toastText } from './support/trip-page.mjs';
 
 let app;
 
+/** Id of the selected tab, e.g. 'meals' (labels differ between phone and desktop). */
+const selectedTab = async (page) =>
+  (await page.getByRole('tab', { selected: true }).getAttribute('id')).replace('trip-tab-', '');
+
 before(async () => {
   app = await startApp();
 });
@@ -94,7 +98,7 @@ describe('trip page, view-only', () => {
     assert.equal(await page.getByRole('heading', { name: 'Flights' }).count(), 1);
 
     await page.keyboard.press('ArrowRight');
-    assert.equal(await page.getByRole('tab', { selected: true }).innerText(), '✅ Packing & Tasks');
+    assert.equal(await selectedTab(page), 'checklist');
     assert.match(page.url(), /\?tab=checklist$/);
     await page.keyboard.press('End');
     assert.match(page.url(), /\?tab=meals$/);
@@ -104,13 +108,13 @@ describe('trip page, view-only', () => {
     assert.match(page.url(), /\?tab=meals$/, 'wraps around');
 
     await page.reload();
-    assert.equal(await page.getByRole('tab', { selected: true }).innerText(), '🥣 Meals & Groceries');
+    assert.equal(await selectedTab(page), 'meals');
     await context.close();
   });
 
   test('an unknown ?tab falls back to the itinerary', async () => {
     const { page, context } = await openTrip(app, { tab: 'bogus' });
-    assert.equal(await page.getByRole('tab', { selected: true }).innerText(), '🗓️ Daily Itinerary');
+    assert.equal(await selectedTab(page), 'itinerary');
     await context.close();
   });
 
@@ -183,7 +187,7 @@ describe('mobile layout (375px)', () => {
   test('no tab scrolls sideways, and the active tab is visible', async () => {
     const { page, context } = await openTrip(app, { tab: 'meals', viewport: { width: 375, height: 812 } });
     const active = page.getByRole('tab', { selected: true });
-    assert.equal(await active.innerText(), '🥣 Meals & Groceries');
+    assert.equal(await selectedTab(page), 'meals');
     const box = await active.boundingBox();
     assert.ok(box.x >= 0 && box.x + box.width <= 375 + 1, `active tab visible (x=${box.x}, w=${box.width})`);
 

@@ -13,7 +13,6 @@
 
 .statusTitle {
   margin: 0 0 8px 0;
-  color: var(--primary-color);
 }
 
 .statusText {
@@ -26,19 +25,4 @@
   gap: 10px;
   justify-content: center;
   flex-wrap: wrap;
-}
-
-.loadingHeader {
-  height: 140px;
-  background: linear-gradient(135deg, var(--primary-color) 0%, #1a252f 100%);
-}
-
-.skeletonStack {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.skeletonCard {
-  margin-bottom: 24px;
 }

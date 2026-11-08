@@ -10,7 +10,7 @@ A trip itinerary/logistics/packing/meal-planning app for the Ferrin household. F
 
 ### Stack
 
-- Next.js 16 (App Router), React 19, plain CSS (no Tailwind/CSS-in-JS)
+- Next.js 16 (App Router), React 19, plain CSS with design tokens (no Tailwind/CSS-in-JS); Fraunces + Inter via `next/font/google`
 - Prisma 7 + `better-sqlite3` via `@prisma/adapter-better-sqlite3`, SQLite storage (`dev.db` locally)
 - Node's built-in test runner (`node --test`), not Jest/Vitest
 - Deployed as a standalone Next.js build to a self-hosted k8s cluster via GitHub Actions (ARM64)
@@ -20,9 +20,12 @@ A trip itinerary/logistics/packing/meal-planning app for the Ferrin household. F
 - `src/app/` — App Router pages + `src/app/api/*` route handlers (REST-style, one folder per resource: activities, auth, checklist, grocery, health, logistics, meals). Route files are thin: `export const POST = route(handler)` via `src/lib/api/next-route.js`
 - `src/lib/api/` — framework-free API handlers (`({ db, isAdmin, body }) => { status, body }`) holding the validation and auth checks; `run.js` has the result helpers and maps Prisma not-found errors to 404
 - `src/components/trip/` — trip detail page: `TripDetailsClient` (tab shell + `useReducer` from `src/lib/trip-reducer.js`) with one folder per tab (`itinerary/`, `logistics/`, `checklist/`, `meals/`)
-- `src/components/ui/` — shared UI kit: `Modal` (native `<dialog>`), `Toast`, `ConfirmDialog`, `Markdown` (the only `dangerouslySetInnerHTML`), `Skeleton`, `EmptyState`
+- `src/components/ui/` — shared UI kit: `Modal` (native `<dialog>`), `Toast`, `ConfirmDialog`, `Markdown`, `Skeleton`, `EmptyState`. `Markdown` and the theme script in `layout.js` are the only `dangerouslySetInnerHTML` uses
+- `src/components/site/` — `SiteHeader` (sticky bar on every page) and `ThemeToggle` (System/Light/Dark); `src/components/trips/` — server-rendered `TripHero`, `TripCard`, `FeaturedTrip`
+- `src/styles/` — `tokens.css` (semantic colour roles for light and `[data-theme='dark']`, type/spacing/radius/shadow/motion scales, legacy aliases), `base.css`, `components.css`, `utilities.css`, imported once in `layout.js`
 - `src/lib/db.js` — Prisma client singleton (cached on `global.prisma` outside production to survive dev hot-reload)
 - `src/lib/helpers.js` — time parsing, meal icons, date logic shared across pages; `src/lib/markdown.js` — safe markdown (http/https/mailto/tel links only)
+- `src/lib/color.js` — `tripTheme(trip)` turns a trip's colours into AA-checked `--trip-*` CSS variables; `src/lib/theme.js` — theme preference + the inline no-flash `<head>` script; `src/lib/trip-status.js` — `tripPhase` (upcoming / Day N of M / past) and labels
 - `prisma/schema.prisma` — models: Trip, ItineraryDay, ItineraryActivity, MealPlan, ChecklistItem, LogisticsCard, GroceryItem, all keyed off `Trip.id` (a slug like `"chicago"`)
 - `prisma/seed.js` / `seed-meals.js` — the only way trips currently get created (no in-app trip creation UI yet)
 
@@ -58,13 +61,14 @@ Work TDD: write or extend a failing test, run it and watch it fail for the right
 
 | Layer | Where | What it covers |
 |---|---|---|
-| Unit | `tests/*.test.mjs` | Pure modules in `src/lib` (markdown, reducer, meals, timeline, categories, apiFetch) |
+| Unit | `tests/*.test.mjs` | Pure modules in `src/lib` (markdown, reducer, meals, timeline, color contrast, theme script, trip status, apiFetch) |
 | API handler | `tests/api/*.test.mjs` | `src/lib/api/*` against a real throwaway SQLite DB (`tests/support/test-db.mjs`, fixtures in `tests/support/fixtures.mjs`) |
-| Scripts/config | `tests/scripts/*.test.mjs` | `docker-entrypoint.sh` (stubbed npx/node), seed `--force` guards, k8s/Dockerfile invariants |
-| End-to-end | `tests/e2e/*.e2e.mjs` | Playwright (driven from `node --test`) against `next start` on a throwaway DB: HTTP auth wiring and real browser flows |
+| Scripts/config | `tests/scripts/*.test.mjs` | `docker-entrypoint.sh` (stubbed npx/node), seed `--force` guards, k8s/Dockerfile invariants, design tokens in sync with `color.js` and passing contrast |
+| End-to-end | `tests/e2e/*.e2e.mjs` | Playwright (driven from `node --test`) against `next start` on a throwaway DB: HTTP auth wiring, real browser flows, themes, and axe-core WCAG 2.1 AA scans of every page/tab in light and dark |
 
 - Test files import source with relative paths; `src/lib` modules used by tests must not import `@/` or `next/*`.
 - Never point tests at `dev.db`; always use `createTestDb()` / `createDbFile()`.
 - e2e tests need a production build (`npm run test:e2e` builds first) and Chromium (`npx playwright install chromium`).
 - CI (`.github/workflows/test.yml`) runs lint, `npm test` and `npm run test:e2e` on every PR, and the deploy workflow only runs after it passes.
 - Keep `loading.js` out of routes that call `notFound()`: streaming locks the status at 200 (see the e2e 404 tests).
+- Styling: use the semantic tokens in `src/styles/tokens.css` (`--text`, `--surface`, `--accent`, `--trip-ink`, ...), never raw hex in components. New colour pairs must pass the axe e2e scan in both themes. Trip colours only reach CSS through `tripTheme()`.
