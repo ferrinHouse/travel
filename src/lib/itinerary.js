@@ -29,3 +29,15 @@ export function buildDayTimeline(day, meals) {
   // Array.prototype.sort is stable, so equal times keep activity order.
   return [...day.activities, ...dayMeals].sort((a, b) => sortKey(a) - sortKey(b));
 }
+
+// parseTimeToMinutes uses 9990+ for "no usable time".
+const NO_TIME = 9990;
+
+/** Id of the first timeline item at or after `nowMinutes`, or null once the day is done. */
+export function nextUpId(timeline, nowMinutes) {
+  const next = timeline.find((item) => {
+    const key = sortKey(item);
+    return key < NO_TIME && key >= nowMinutes;
+  });
+  return next ? next.id : null;
+}

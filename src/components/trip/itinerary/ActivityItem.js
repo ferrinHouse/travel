@@ -2,10 +2,16 @@ import Markdown from '@/components/ui/Markdown';
 import { getMealIcon } from '@/lib/helpers';
 import styles from '../trip.module.css';
 
-export default function ActivityItem({ activity: act, canEdit, onEdit, onDelete }) {
+export default function ActivityItem({ activity: act, isNext = false, canEdit, onEdit, onDelete }) {
   return (
-    <div className={`activity-item ${act.isAlert ? 'alert-box' : ''} ${styles.activityRow}`}>
-      <span className="activity-time">{act.time || 'Flexible'}</span>
+    <div
+      className={`activity-item ${act.isAlert ? 'alert-box' : ''} ${styles.activityRow}`}
+      aria-current={isNext ? 'time' : undefined}
+    >
+      <span className="activity-time">
+        {act.time || 'Flexible'}
+        {isNext && <span className="next-up">Next up</span>}
+      </span>
       <div className="activity-content">
         <strong className={styles.activityTitle}>
           {act.isMeal && <span aria-hidden="true">{getMealIcon(act.mealType)} </span>}

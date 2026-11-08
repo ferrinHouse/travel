@@ -1,0 +1,182 @@
+/*
+ * Design tokens. Colours are semantic roles; components never use raw hex.
+ * --bg / --surface must match SURFACES in src/lib/color.js and THEME_COLORS
+ * in src/lib/theme.js (tests/scripts/design-tokens.test.mjs checks this).
+ */
+
+:root {
+  /* Surfaces */
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --surface-2: #eaeef2;
+  --surface-raised: #ffffff;
+  --border: #dde3ea;
+  --border-strong: #c3ccd6;
+  --overlay: rgba(15, 23, 32, 0.55);
+
+  /* Text */
+  --text: #1b2430;
+  --text-muted: #566170;
+  --heading: #1f3b57;
+  --link: #0b62b8;
+
+  /* Actions */
+  --accent: #0b62b8;
+  --on-accent: #ffffff;
+  --neutral-solid: #4b5563;
+  --on-neutral: #ffffff;
+  --focus-ring: #0b62b8;
+
+  /* Status (text colours pass AA on every surface; *-bg are tints) */
+  --success: #1a7343;
+  --success-solid: #1a7343;
+  --on-success: #ffffff;
+  --success-bg: #e7f5ec;
+  --danger: #b42318;
+  --danger-solid: #b42318;
+  --on-danger: #ffffff;
+  --danger-bg: #fdecea;
+  --warning: #8a5a00;
+  --warning-bg: #fff4d6;
+
+  /* Site hero */
+  --hero-start: #1f3b57;
+  --hero-end: #0f1f30;
+  --on-hero: #ffffff;
+
+  /* Typography (font families come from next/font in layout.js) */
+  --font-body: var(--font-inter, system-ui), -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: var(--font-fraunces, Georgia), 'Times New Roman', serif;
+  --step--1: clamp(0.8rem, 0.78rem + 0.1vw, 0.875rem);
+  --step-0: clamp(0.95rem, 0.92rem + 0.15vw, 1.0625rem);
+  --step-1: clamp(1.1rem, 1.04rem + 0.3vw, 1.3rem);
+  --step-2: clamp(1.3rem, 1.18rem + 0.6vw, 1.65rem);
+  --step-3: clamp(1.6rem, 1.38rem + 1.1vw, 2.25rem);
+  --step-4: clamp(2rem, 1.6rem + 2vw, 3.25rem);
+  --leading: 1.6;
+  --leading-tight: 1.15;
+
+  /* Spacing: 4px scale */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Shape */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 9999px;
+
+  /* Elevation */
+  --shadow-1: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.08);
+  --shadow-2: 0 4px 8px -2px rgba(16, 24, 40, 0.08), 0 2px 4px -2px rgba(16, 24, 40, 0.06);
+  --shadow-3: 0 16px 32px -8px rgba(16, 24, 40, 0.16), 0 4px 8px -4px rgba(16, 24, 40, 0.08);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --duration-fast: 120ms;
+  --duration: 200ms;
+  --duration-slow: 320ms;
+
+  /* Layers */
+  --z-sticky: 100;
+  --z-tabbar: 200;
+  --z-toast: 2000;
+
+  /* Layout */
+  --content-max: 1200px;
+  --gutter: clamp(1rem, 0.6rem + 2vw, 2rem);
+  --site-header-h: 56px;
+  --tabbar-h: 64px;
+
+  /* Legacy names (PR 1 CSS); remove after one release */
+  --primary-color: var(--heading);
+  --accent-color: var(--accent);
+  --bg-color: var(--bg);
+  --card-bg: var(--surface);
+  --text-color: var(--text);
+  --border-color: var(--border);
+  --success-color: var(--success);
+  --danger-color: var(--danger);
+  --warning-color: var(--warning);
+  --shadow-sm: var(--shadow-1);
+  --shadow-md: var(--shadow-2);
+  --shadow-lg: var(--shadow-3);
+}
+
+:root[data-theme='dark'] {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface-2: #1f2630;
+  --surface-raised: #1c222b;
+  --border: #2d3540;
+  --border-strong: #3d4653;
+  --overlay: rgba(0, 0, 0, 0.7);
+
+  --text: #e6edf3;
+  --text-muted: #9ba7b4;
+  --heading: #c9d7e6;
+  --link: #6cb6ff;
+
+  --accent: #1f6feb;
+  --on-accent: #ffffff;
+  --neutral-solid: #3d4653;
+  --on-neutral: #ffffff;
+  --focus-ring: #6cb6ff;
+
+  --success: #4ac26b;
+  --success-solid: #1a7343;
+  --on-success: #ffffff;
+  --success-bg: #12261b;
+  --danger: #ff7b72;
+  --danger-solid: #b42318;
+  --on-danger: #ffffff;
+  --danger-bg: #2d1416;
+  --warning: #e3b341;
+  --warning-bg: #2b2111;
+
+  --hero-start: #1c2f45;
+  --hero-end: #0b1420;
+  --on-hero: #ffffff;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 4px 10px -2px rgba(0, 0, 0, 0.5);
+  --shadow-3: 0 16px 32px -8px rgba(0, 0, 0, 0.6);
+}
+
+/*
+ * Per-trip colours. The page sets --trip-* (from tripTheme() in
+ * src/lib/color.js, already AA-adjusted) on an element with [data-trip].
+ */
+[data-trip] {
+  --heading: var(--trip-heading-light);
+  --trip-ink: var(--trip-ink-light);
+  --accent: var(--trip-accent-strong);
+  --on-accent: var(--trip-on-accent);
+  --focus-ring: var(--trip-ink-light);
+  --hero-start: var(--trip-hero);
+  --hero-end: var(--trip-hero-end);
+  --on-hero: var(--trip-on-hero);
+}
+
+:root[data-theme='dark'] [data-trip] {
+  --heading: var(--trip-heading-dark);
+  --trip-ink: var(--trip-ink-dark);
+  --focus-ring: var(--trip-ink-dark);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0.01ms;
+    --duration: 0.01ms;
+    --duration-slow: 0.01ms;
+  }
+}

@@ -1,0 +1,44 @@
+.themeToggle {
+  display: inline-flex;
+  gap: 2px;
+  margin: 0;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background-color: var(--surface-2);
+}
+
+.themeOption {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.themeOption:hover {
+  background-color: var(--surface);
+}
+
+.themeOption:has(:checked) {
+  background-color: var(--surface);
+  box-shadow: var(--shadow-1);
+}
+
+.themeOption:has(:focus-visible) {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+/* Keep the native radio for keyboard and screen readers, but invisible. */
+.themeInput {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
