@@ -28,7 +28,9 @@ spec:
               cpu: "10m"
               memory: "64Mi"
             limits:
-              cpu: "100m"
+              # Start-up (DB backup + prisma db push + Next boot) needs a burst;
+              # at 100m it took over 3 minutes on the Pi. Idle use is ~10m.
+              cpu: "1"
               memory: "256Mi"
           ports:
             - containerPort: 3000
@@ -60,6 +62,7 @@ spec:
               path: /api/health
               port: 3000
             periodSeconds: 5
+            timeoutSeconds: 5
             failureThreshold: 36 # allow up to 3 min for backup + db push on NFS
           readinessProbe:
             httpGet:
