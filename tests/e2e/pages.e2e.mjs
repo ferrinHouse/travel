@@ -102,20 +102,26 @@ describe('trip page, view-only', () => {
     assert.equal(await selectedTab(page), 'checklist');
     assert.match(page.url(), /\?tab=checklist$/);
     await page.keyboard.press('End');
-    assert.match(page.url(), /\?tab=meals$/);
+    assert.match(page.url(), /\?tab=photos$/);
     await page.keyboard.press('Home');
     assert.match(page.url(), /\?tab=itinerary$/);
     await page.keyboard.press('ArrowLeft');
-    assert.match(page.url(), /\?tab=meals$/, 'wraps around');
+    assert.match(page.url(), /\?tab=photos$/, 'wraps around');
 
     await page.reload();
-    assert.equal(await selectedTab(page), 'meals');
+    assert.equal(await selectedTab(page), 'photos');
     await context.close();
   });
 
   test('an unknown ?tab falls back to the itinerary', async () => {
     const { page, context } = await openTrip(app, { tab: 'bogus' });
     assert.equal(await selectedTab(page), 'itinerary');
+    await context.close();
+  });
+
+  test('on a past trip, an unknown ?tab falls back to Photos', async () => {
+    const { page, context } = await openTrip(app, { id: 'oldtown', tab: 'bogus' });
+    assert.equal(await selectedTab(page), 'photos');
     await context.close();
   });
 

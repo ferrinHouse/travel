@@ -31,7 +31,8 @@ spec:
               # Start-up (DB backup + prisma db push + Next boot) needs a burst;
               # at 100m it took over 3 minutes on the Pi. Idle use is ~10m.
               cpu: "1"
-              memory: "256Mi"
+              # sharp holds a decoded photo (up to ~50 MB for a 12 MP image) while resizing.
+              memory: "512Mi"
           ports:
             - containerPort: 3000
           env:
@@ -42,6 +43,11 @@ spec:
             # Trip dates are family-local; decide "past"/"today" in Central time.
             - name: TZ
               value: "America/Chicago"
+            # Scrapbook photos (the travel-uploads NFS volume below).
+            - name: UPLOADS_DIR
+              value: "/app/uploads"
+            - name: MAX_UPLOAD_MB
+              value: "25"
             # The site's public https address: WebAuthn origin, cookie Secure flag
             # and the cross-site write check. Set in k8s/kustomization.yaml.
             - name: APP_ORIGIN
@@ -80,7 +86,12 @@ spec:
           volumeMounts:
             - name: database-volume
               mountPath: /app/database
+            - name: uploads-volume
+              mountPath: /app/uploads
       volumes:
         - name: database-volume
           persistentVolumeClaim:
             claimName: travel-site-pvc
+        - name: uploads-volume
+          persistentVolumeClaim:
+            claimName: travel-uploads-pvc

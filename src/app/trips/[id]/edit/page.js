@@ -6,6 +6,7 @@ import { getCurrentUser, requirePageUser } from '@/lib/auth/current-user';
 import { tripFormValues } from '@/lib/trips/form';
 import TripForm from '@/components/trips/TripForm';
 import TripDangerZone from '@/components/trips/TripDangerZone';
+import TripShare from '@/components/trips/TripShare';
 import styles from '@/components/trips/trips.module.css';
 
 export const revalidate = 0;
@@ -24,9 +25,10 @@ export async function generateMetadata({ params }) {
 export default async function EditTripPage({ params }) {
   const { id } = await params;
   await requirePageUser(`/trips/${encodeURIComponent(id)}/edit`, 'edit');
-  const [trip, tags] = await Promise.all([
+  const [trip, tags, shareLink] = await Promise.all([
     getTrip(id),
     prisma.trip.findMany({ distinct: ['tag'], select: { tag: true } }),
+    prisma.tripShareLink.findFirst({ where: { tripId: id, revokedAt: null }, select: { createdAt: true } }),
   ]);
   if (!trip) notFound();
 
@@ -42,6 +44,7 @@ export default async function EditTripPage({ params }) {
         </p>
       </header>
       <TripForm mode="edit" tripId={trip.id} initial={tripFormValues(trip)} tags={tags.map((t) => t.tag)} />
+      <TripShare tripId={trip.id} sharedSince={shareLink?.createdAt.toISOString() ?? null} />
       <TripDangerZone trip={{ id: trip.id, name: trip.name, archivedAt: trip.archivedAt }} />
     </main>
   );

@@ -1,0 +1,147 @@
+/* Trip story (scrapbook) page, on screen and on paper */
+.story {
+  margin-bottom: var(--space-16);
+}
+
+.cover {
+  border-radius: var(--radius-xl);
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stats li {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in oklch, var(--on-hero) 45%, transparent);
+  background-color: color-mix(in oklch, var(--hero-end) 55%, transparent);
+  font-weight: 700;
+  font-size: var(--step--1);
+}
+
+.body {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding-top: var(--space-8);
+}
+
+.empty {
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.day {
+  margin-bottom: var(--space-10);
+}
+
+.dayHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  margin: 0 0 var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 2px solid var(--trip-ink, var(--border-strong));
+  font-size: var(--step-2);
+}
+
+.dayTitle {
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+  font-weight: 500;
+}
+
+.plans {
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.plans li {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.time {
+  flex: 0 0 6rem;
+  color: var(--trip-ink, var(--text-muted));
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.photos {
+  columns: 2 18rem;
+  column-gap: var(--space-4);
+}
+
+.figure {
+  break-inside: avoid;
+  margin: 0 0 var(--space-4);
+  padding: var(--space-2) var(--space-2) var(--space-3);
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+}
+
+.figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+}
+
+.figure figcaption {
+  margin-top: var(--space-2);
+  font-family: var(--font-display);
+  text-align: center;
+}
+
+.footer {
+  margin-top: var(--space-12);
+  color: var(--text-muted);
+  text-align: center;
+  font-size: var(--step--1);
+}
+
+@media print {
+  .story {
+    margin: 0;
+  }
+
+  .cover {
+    border-radius: 0;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .body {
+    max-width: none;
+  }
+
+  .dayHeading {
+    break-after: avoid;
+  }
+
+  .photos {
+    columns: 2;
+  }
+
+  .figure {
+    box-shadow: none;
+  }
+
+  .figure img {
+    max-height: 9cm;
+    object-fit: contain;
+  }
+}

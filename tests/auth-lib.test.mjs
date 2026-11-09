@@ -69,6 +69,7 @@ describe('roles', () => {
       view: ['viewer', 'member', 'admin'],
       toggle: ['member', 'admin'],
       'add-item': ['member', 'admin'],
+      upload: ['member', 'admin'],
       edit: ['admin'],
       'manage-users': ['admin'],
     };

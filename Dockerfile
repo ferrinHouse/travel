@@ -56,8 +56,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/scripts/admin-reset.mjs ./scripts
 
 RUN chmod +x docker-entrypoint.sh
 
-# Setup SQLite database directory with correct permissions
-RUN mkdir -p /app/database && chown -R nextjs:nodejs /app/database
+# SQLite database and photo upload folders (both NFS mounts in production)
+RUN mkdir -p /app/database /app/uploads && chown -R nextjs:nodejs /app/database /app/uploads
+
+# Photos are resized with sharp: fail the build, not the first upload, if its
+# native binary didn't make it into the standalone output.
+RUN node -e "require('sharp'); console.log('sharp OK')"
 
 # Ensure everything inside /app is owned by nextjs
 RUN chown -R nextjs:nodejs /app

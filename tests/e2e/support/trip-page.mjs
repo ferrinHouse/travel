@@ -26,3 +26,6 @@ export const fitsWidth = (page) =>
   page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
 
 export const toastText = (page) => page.locator('[role="status"][aria-live="polite"]').innerText();
+
+/** Waits for a toast matching `pattern` (toasts appear after the request finishes). */
+export const waitForToast = (page, pattern) => page.locator('[role="status"][aria-live="polite"]').getByText(pattern).first().waitFor();

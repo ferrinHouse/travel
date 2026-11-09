@@ -24,6 +24,15 @@ fi
 echo "Running Prisma db push..."
 npx prisma db push
 
+# Photos (scrapbook): the site works without them, so warn loudly instead of
+# failing when the uploads volume can't be written (usually the NFS export
+# isn't owned by the container's nextjs user, uid 1001).
+if [ -n "$UPLOADS_DIR" ]; then
+  if ! { mkdir -p "$UPLOADS_DIR/photos" 2>/dev/null && [ -w "$UPLOADS_DIR/photos" ]; }; then
+    echo "WARNING: $UPLOADS_DIR is not writable, so photo uploads will fail. On the NAS: chown -R 1001:1001 <the travel-uploads export>" >&2
+  fi
+fi
+
 # Start the standalone Next.js application
 echo "Starting Next.js..."
 exec node server.js

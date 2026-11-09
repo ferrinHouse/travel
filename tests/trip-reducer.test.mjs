@@ -83,6 +83,22 @@ test('day patch renames one day and keeps its activities', () => {
   assert.strictEqual(start.days[0].title, undefined, 'original state is not mutated');
 });
 
+test('photos: add, patch, remove, and only one cover at a time', () => {
+  const start = { ...baseTrip(), photos: [{ id: 1, caption: null, isCover: true }] };
+  const added = tripReducer(start, { type: 'photo/add', photo: { id: 2, caption: 'Pier', isCover: false } });
+  assert.deepStrictEqual(added.photos.map((p) => p.id), [1, 2]);
+  assert.strictEqual(start.photos.length, 1, 'original state is not mutated');
+
+  const captioned = tripReducer(added, { type: 'photo/patch', id: 1, patch: { caption: 'Beach' } });
+  assert.strictEqual(captioned.photos[0].caption, 'Beach');
+
+  const cover = tripReducer(captioned, { type: 'photo/patch', id: 2, patch: { isCover: true } });
+  assert.deepStrictEqual(cover.photos.map((p) => p.isCover), [false, true]);
+
+  const removed = tripReducer(cover, { type: 'photo/remove', id: 2 });
+  assert.deepStrictEqual(removed.photos.map((p) => p.id), [1]);
+});
+
 test('unknown actions throw', () => {
   assert.throws(() => tripReducer(baseTrip(), { type: 'nope' }), /Unknown trip action/);
 });

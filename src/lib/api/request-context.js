@@ -30,7 +30,39 @@ export function appConfig(env = process.env, request = {}) {
     rpName: blankToNull(env.WEBAUTHN_RP_NAME) ?? DEFAULT_RP_NAME,
     setupToken: blankToNull(env.SETUP_TOKEN),
     secureCookies,
+    // Photo files (the 20Gi NFS volume in production); relative = from the app folder.
+    uploadsDir: blankToNull(env.UPLOADS_DIR) ?? 'uploads',
+    maxUploadBytes: positiveNumber(env.MAX_UPLOAD_MB, DEFAULT_MAX_UPLOAD_MB) * 1024 * 1024,
   };
+}
+
+const DEFAULT_MAX_UPLOAD_MB = 25;
+function positiveNumber(value, fallback) {
+  const n = Number(value);
+  return blankToNull(value) && Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
+/**
+ * Reads a request body stream into a Buffer, giving up (and cancelling the
+ * stream) as soon as it passes `maxBytes`, so a huge upload never sits in memory.
+ * → { bytes: Buffer | null, truncated: boolean }
+ */
+export async function readLimited(stream, maxBytes) {
+  if (!stream) return { bytes: Buffer.alloc(0), truncated: false };
+  const reader = stream.getReader();
+  const chunks = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > maxBytes) {
+      await reader.cancel().catch(() => {});
+      return { bytes: null, truncated: true };
+    }
+    chunks.push(value);
+  }
+  return { bytes: Buffer.concat(chunks.map((c) => Buffer.from(c.buffer, c.byteOffset, c.byteLength))), truncated: false };
 }
 
 /** The visitor's address as reported by the reverse proxy (used for rate limits only). */

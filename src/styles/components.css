@@ -44,6 +44,20 @@
   border-color: var(--border-strong);
 }
 
+.trip-card-with-cover {
+  padding-top: 0;
+}
+
+.trip-card-cover {
+  display: block;
+  width: calc(100% + 2 * var(--space-6));
+  max-width: none;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  margin: 0 calc(-1 * var(--space-6)) var(--space-1);
+  background-color: var(--surface-2);
+}
+
 .trip-card-head {
   display: flex;
   justify-content: space-between;

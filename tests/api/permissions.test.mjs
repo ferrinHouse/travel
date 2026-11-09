@@ -12,6 +12,12 @@ import { toggleGroceryItem, createGroceryItem } from '../../src/lib/api/grocery.
 import { saveLogisticsCard, deleteLogisticsCard } from '../../src/lib/api/logistics.js';
 import { saveMeal } from '../../src/lib/api/meals.js';
 import { archiveTrip, createTrip, deleteTrip, updateDay, updateTrip } from '../../src/lib/api/trips.js';
+import { createShareLink, revokeShareLink } from '../../src/lib/api/share.js';
+import os from 'node:os';
+import path from 'node:path';
+
+// Photo upload / caption / delete rules (uploader-or-admin) are covered in photos.test.mjs.
+const config = { origin: 'https://travel.example.org', uploadsDir: path.join(os.tmpdir(), 'travel-permissions-uploads') };
 
 let db;
 let trip;
@@ -50,6 +56,8 @@ const CASES = [
   ['archive a trip', archiveTrip, () => ({ id: trip.id, archived: true }), 'admin'],
   ['delete a trip', deleteTrip, () => ({ id: trip.id, confirmName: trip.name }), 'admin'],
   ['rename a day', updateDay, () => ({ id: trip.days[0].id, title: 'Arrival' }), 'admin'],
+  ['share a trip story', createShareLink, () => ({ tripId: trip.id }), 'admin'],
+  ['turn off a share link', revokeShareLink, () => ({ tripId: trip.id }), 'admin'],
   ['plan a meal', saveMeal, () => ({ tripId: trip.id, dayNumber: 2, mealType: 'Lunch', mealName: 'Subs' }), 'admin'],
 ];
 
@@ -58,9 +66,9 @@ const RANK = { viewer: 0, member: 1, admin: 2 };
 describe('role matrix', () => {
   for (const [name, handler, body, minimum] of CASES) {
     test(`${name}: needs ${minimum}`, async () => {
-      assert.equal((await runHandler(handler, { db: db.prisma, user: null, body: body() })).status, 401, 'anonymous');
+      assert.equal((await runHandler(handler, { db: db.prisma, user: null, body: body(), config })).status, 401, 'anonymous');
       for (const role of ['viewer', 'member', 'admin']) {
-        const res = await runHandler(handler, { db: db.prisma, user: actor(role), body: body() });
+        const res = await runHandler(handler, { db: db.prisma, user: actor(role), body: body(), config });
         const expected = RANK[role] >= RANK[minimum] ? 200 : 403;
         assert.equal(res.status, expected, `${role} → ${JSON.stringify(res.body)}`);
       }

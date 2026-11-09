@@ -5,6 +5,7 @@ const ACTIONS = {
   view: 'viewer',
   toggle: 'member', // tick checklist / grocery items
   'add-item': 'member', // add checklist / grocery items
+  upload: 'member', // add photos (and change or delete their own)
   edit: 'admin', // everything else that changes trip content
   'manage-users': 'admin',
 };

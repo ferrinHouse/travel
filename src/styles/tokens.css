@@ -88,6 +88,7 @@
 
   /* Layers */
   --z-sticky: 100;
+  --z-header: 150; /* above the sticky trip tabs, so the account menu drops over them */
   --z-tabbar: 200;
   --z-toast: 2000;
 

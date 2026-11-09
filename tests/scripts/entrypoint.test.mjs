@@ -99,6 +99,23 @@ describe('docker-entrypoint.sh', { skip: !hasSh && 'needs a POSIX sh' }, () => {
     assert.deepEqual(kept.filter((n) => old.includes(n)), old.slice(3));
   });
 
+  test('prepares the photos folder when UPLOADS_DIR is set', () => {
+    const uploads = path.join(work, 'uploads');
+    const res = run({ UPLOADS_DIR: uploads });
+    assert.equal(res.status, 0, res.stderr);
+    assert.ok(fs.existsSync(path.join(uploads, 'photos')));
+    assert.doesNotMatch(res.stderr, /WARNING/);
+  });
+
+  test('an unwritable photos folder is a loud warning, not a failed start', () => {
+    const blocker = path.join(work, 'not-a-folder');
+    fs.writeFileSync(blocker, 'a file where the folder should be');
+    const res = run({ UPLOADS_DIR: blocker });
+    assert.equal(res.status, 0, res.stderr);
+    assert.match(res.stderr, /WARNING: .*not writable.*chown -R 1001:1001/);
+    assert.deepEqual(calls(), ['npx prisma db push', 'node server.js'], 'the site still starts');
+  });
+
   test('a failed schema push stops startup and never launches the server', () => {
     const res = run({ NPX_EXIT: '1' });
     assert.notEqual(res.status, 0);

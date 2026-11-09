@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - base/storage.yaml
+  - base/uploads-storage.yaml
   - base/deployment.yaml
   - base/service.yaml
 

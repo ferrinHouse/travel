@@ -39,9 +39,16 @@ A modern, responsive travel companion and itinerary management web application b
   - Automatically sorts meals directly into each day's timeline.
   - Master grocery shopping checklist categorized by meal, store, or section (e.g., Trader Joe's, Costco, Taco Bar, Essentials).
 
+- **Scrapbook** (photos from the trip):
+  - **Photos** tab on every trip (past trips open on it). Members add photos from their phone; each lands on the itinerary day it was taken (from the camera's date), or under "Other photos".
+  - Photos are shrunk in the browser before upload (saves data on the road; iPhone HEIC becomes JPEG), then stored as three sizes with location and camera data removed.
+  - Tap a photo for the full-screen viewer: swipe or use the arrow keys, download the original, and (for your own photos, or admins in Edit mode) add a caption, move it to another day, or delete it. Admins pick the **trip cover**, shown on the trip header and the dashboard card.
+  - **Trip story** (`/trips/<id>/story`): the trip as a printable scrapbook, with each day's plans and photos. "Print or save as PDF" makes a keepsake.
+  - **Share link** (off by default): from Trip settings, admins can make a read-only link to the story for people without an account. It shows only the story and photos (no logistics, checklists or meals), is hidden from search engines, and can be turned off or replaced any time.
+
 - **Family Accounts**:
   - Everyone signs in with their own username and a password or a **passkey** (Face ID, Touch ID, Windows Hello, Android screen lock). Nothing is visible without signing in.
-  - **Viewer** sees everything; **Member** also ticks off and adds packing and grocery items; **Admin** plans trips (behind an "Edit mode" switch) and manages people.
+  - **Viewer** sees everything; **Member** also ticks off and adds packing and grocery items and adds photos; **Admin** plans trips (behind an "Edit mode" switch) and manages people.
   - Admins add people at **People** (`/admin/users`) and text them a one-time invite link; forgotten passwords get a one-time reset link the same way.
   - **Your account** (`/account`) manages passkeys, password and signed-in devices.
 
@@ -75,7 +82,8 @@ travel/
 │   ├── base/                    # Base Deployment, Service, and PVC definitions
 │   │   ├── deployment.yaml
 │   │   ├── service.yaml
-│   │   └── storage.yaml
+│   │   ├── storage.yaml         # Database volume
+│   │   └── uploads-storage.yaml # Photo volume (20Gi)
 │   ├── patches/                 # Environment patches (NFS server IP & export path)
 │   │   └── nfs-server.yaml
 │   └── kustomization.yaml
@@ -88,7 +96,9 @@ travel/
 │   ├── app/
 │   │   ├── api/                 # Next.js Route Handlers (REST endpoints)
 │   │   │   ├── activities/      # Itinerary activity CRUD
-│   │   │   ├── trips/           # Create / edit / delete trips, archive (trips/archive)
+│   │   │   ├── trips/           # Create / edit / delete trips, archive (trips/archive), share links (trips/share)
+│   │   │   ├── photos/          # Upload / caption / delete; photos/[id]/[size] serves the files
+│   │   │   ├── share/           # Photo files for share links (no sign-in, token-checked)
 │   │   │   ├── days/            # Day titles
 │   │   │   ├── auth/            # Sign in/out, first-run setup, invites, passkey sign-in
 │   │   │   ├── account/         # Own password, passkeys and sessions
@@ -98,12 +108,14 @@ travel/
 │   │   │   ├── logistics/       # Logistics info cards
 │   │   │   └── meals/           # Meal planner upserts
 │   │   ├── trips/new/           # Plan a new trip (admins)
-│   │   ├── trips/[id]/          # Dynamic trip detail page with tabbed view; edit/ = trip settings
+│   │   ├── trips/[id]/          # Dynamic trip detail page with tabbed view; edit/ = trip settings; story/ = scrapbook
+│   │   ├── share/[token]/       # Read-only shared trip story
 │   │   ├── layout.js            # Root HTML shell, fonts, metadata, no-flash theme script
 │   │   └── page.js              # Dashboard homepage (Upcoming & Past trips)
 │   ├── components/
 │   │   ├── site/                # Sticky site header + System/Light/Dark theme switch
-│   │   ├── trip/                # Trip detail page: tab shell + itinerary/logistics/checklist/meals tabs
+│   │   ├── trip/                # Trip detail page: tab shell + itinerary/logistics/checklist/meals/photos tabs
+│   │   ├── story/               # Trip story (scrapbook) used by the story and share pages
 │   │   ├── trips/               # Trip hero, dashboard cards, featured "next adventure", trip form, archive/delete
 │   │   └── ui/                  # Shared UI kit: Modal, Toast, ConfirmDialog, Markdown, Skeleton
 │   ├── styles/                  # Design tokens (light/dark), base, components, utilities
@@ -116,6 +128,7 @@ travel/
 │       ├── trip-status.js       # Countdown / "Day N of M" / past
 │       ├── trip-reducer.js      # Pure reducer for trip page state
 │       ├── trips/               # Trip dates, day scaffolding/reconciling, slugs, form validation, starter checklist
+│       ├── photos/              # EXIF dates, day matching, upload checks, sharp resizing, file storage, view helpers
 │       └── api-client.js        # fetch wrapper that throws on API errors
 ├── tests/
 │   ├── *.test.mjs               # Unit tests for pure modules in src/lib
@@ -143,6 +156,8 @@ Defined in [`prisma/schema.prisma`](prisma/schema.prisma):
 - **`ChecklistItem`**: Shared tasks and packing requirements (`text`, `category`, `isCompleted`).
 - **`LogisticsCard`**: Markdown travel details and confirmations (`title`, `content`, `order`).
 - **`GroceryItem`**: Master shopping checklist (`name`, `category`, `isBought`).
+- **`Photo`**: Scrapbook photos (`dayNumber`, `caption`, `takenAt`, `width`, `height`, `bytes`, `isCover`, `uploadedById`). Files live on the uploads volume at `photos/<tripId>/<storageKey>/` as `orig.jpg` (≤4096px), `lg.webp` (1600px) and `sm.webp` (480px).
+- **`TripShareLink`**: Optional read-only story links; stores only a SHA-256 of the token, and `revokedAt` when turned off.
 - **`User`**, **`Session`**, **`Passkey`**, **`Invite`**, **`AuthChallenge`**: accounts and sign-in. Session and invite rows store only a SHA-256 of the cookie/link token; passwords are scrypt hashes.
 
 ---
@@ -183,6 +198,8 @@ Then open `/setup`, enter the setup code and create your admin account. `/setup`
 | `APP_ORIGIN` | Production | Public `https://` address: passkey origin, `Secure` cookies and the cross-site write check |
 | `WEBAUTHN_RP_ID` | No | Passkey domain; defaults to `APP_ORIGIN`'s hostname |
 | `WEBAUTHN_RP_NAME` | No | Name shown in passkey prompts (default "Family Travel Adventures") |
+| `UPLOADS_DIR` | No | Where photo files go (default `./uploads`, git-ignored; `/app/uploads` in production) |
+| `MAX_UPLOAD_MB` | No | Largest accepted photo upload (default 25) |
 
 ### 3. Initialize & Seed Database
 
@@ -254,6 +271,11 @@ Handlers live in `src/lib/api/` and check permissions with `deny(ctx, action)`: 
 | `POST`/`PATCH`/`DELETE` | `/api/trips` | Admin | Create (with days + checklist) / edit (reconciles days; `409` if a day with plans would go) / delete (needs `confirmName`) |
 | `POST` | `/api/trips/archive` | Admin | Archive or restore (`{ id, archived }`) |
 | `PATCH` | `/api/days` | Admin | Set a day's title |
+| `POST`/`DELETE` | `/api/trips/share` | Admin | Make a share link (returns the URL once; replaces any old one) / turn sharing off |
+| `POST` | `/api/photos?tripId=…` | Member | Upload one photo (raw image body; optional `takenAt`, `dayNumber`, `caption` in the query) |
+| `PATCH`/`DELETE` | `/api/photos` | Uploader or Admin | Caption / day (`isCover` is admin-only) / delete |
+| `GET` | `/api/photos/<id>/<size>` | Signed in | Photo file, size `sm`, `lg` or `orig` (`?download=1` for an attachment) |
+| `GET` | `/api/share/<token>/<id>/<size>` | Link holder | Photo file for a live share link (`sm` or `lg` only) |
 | `POST` | `/api/checklist` | Member | Tick an item, or add one; renaming needs Admin |
 | `DELETE` | `/api/checklist` | Admin | Delete a checklist item |
 | `POST` | `/api/grocery` | Member | Tick a grocery item |
@@ -289,6 +311,7 @@ The container entrypoint (`docker-entrypoint.sh`) copies the database to `databa
 Production deployment runs on a self-hosted Kubernetes cluster:
 
 - **Storage**: PersistentVolume and PVC (`travel-site-pvc`) mounted to `/app/database`, backed by an NFS export (`192.168.1.253:/export/travel-db`).
+- **Photos**: a second 20Gi volume (`travel-uploads-pvc`, reclaim policy `Retain`) mounted to `/app/uploads`, backed by `192.168.1.253:/export/travel-uploads`. The export must exist and be owned by the container user before the first deploy with photos: `chown -R 1001:1001 /export/travel-uploads`. Back it up along with the database export.
 - **Service**: NodePort service exposing the app on port `30090`.
 - **Config**: `APP_ORIGIN` is set by the `travel-config` ConfigMap generated in [`k8s/kustomization.yaml`](k8s/kustomization.yaml). Passkeys are tied to that hostname.
 - **Secret**: `travel-secrets` may hold `SETUP_TOKEN` (optional). Add it for the first deploy, create the admin at `/setup`, then remove it.
@@ -328,10 +351,13 @@ The following features and architectural enhancements are planned for upcoming r
 ### 2. ➕ Dynamic Trip Creation & Management (UI & API)
 - Done: plan, edit, archive and delete trips in the app, with day lists kept in step with the dates. Still open: reordering or inserting days in the middle of a trip, and copying a whole itinerary from a past trip.
 
-### 3. 📱 Offline Support & Progressive Web App (PWA)
+### 3. 📷 Scrapbook
+- Done: photos by day, trip cover, printable trip story and optional share links. Still open: videos, and a storage-usage view for admins.
+
+### 4. 📱 Offline Support & Progressive Web App (PWA)
 - Implement service workers and manifest caching so full itineraries, flight confirmations, hotel addresses, and packing lists remain accessible when traveling through areas with spotty cellular coverage (e.g., flights, cruises, national parks).
 
-### 4. 📅 Calendar & Navigation Integration
+### 5. 📅 Calendar & Navigation Integration
 - One-click `.ics` calendar export and Google Calendar synchronization for flights, reservations, and timed events.
 - Embedded maps showing daily activity routes, transit directions, and walking distance estimates.
 

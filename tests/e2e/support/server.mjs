@@ -87,6 +87,8 @@ export async function startApp({ users: withUsers = true } = {}) {
       DATABASE_URL: db.url,
       APP_ORIGIN: baseURL,
       SETUP_TOKEN,
+      // Photos go next to the throwaway database and are removed with it.
+      UPLOADS_DIR: path.join(db.dir, 'uploads'),
       NEXT_TELEMETRY_DISABLED: '1',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -107,6 +109,7 @@ export async function startApp({ users: withUsers = true } = {}) {
   return {
     baseURL,
     apiURL,
+    uploadsDir: path.join(db.dir, 'uploads'),
     users,
     password: PASSWORD,
     prisma,

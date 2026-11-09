@@ -8,6 +8,8 @@ import TripDetailsClient from '@/components/trip/TripDetailsClient';
 import Link from 'next/link';
 import { can } from '@/lib/auth/roles';
 import { getCurrentUser, requirePageUser, clientUser } from '@/lib/auth/current-user';
+import { clientPhoto, PHOTO_ORDER } from '@/lib/photos/client-photo';
+import { photoUrl } from '@/lib/photos/view';
 
 export const revalidate = 0; // Always render fresh so edits show immediately
 
@@ -25,6 +27,7 @@ const getTripDetails = cache(async (id) => {
         },
         meals: true,
         groceries: { orderBy: { id: 'asc' } },
+        photos: { orderBy: PHOTO_ORDER },
       },
     });
   } catch (error) {
@@ -53,11 +56,14 @@ export default async function TripDetailsPage({ params, searchParams }) {
 
   // Only what the client needs; raw colours and other fields stay on the server.
   const { startDate, endDate, status, days, meals, checklist, logistics, groceries } = trip;
-  const clientTrip = { id: trip.id, startDate, endDate, status, days, meals, checklist, logistics, groceries };
+  const photos = trip.photos.map(clientPhoto);
+  const clientTrip = { id: trip.id, startDate, endDate, status, days, meals, checklist, logistics, groceries, photos };
+  const phase = tripPhase(trip);
+  const cover = trip.photos.find((p) => p.isCover);
 
   return (
     <div data-trip={trip.id} style={tripTheme(trip)}>
-      <TripHero trip={trip} status={tripPhase(trip)} />
+      <TripHero trip={trip} status={phase} cover={cover && { src: photoUrl(cover, 'lg'), alt: cover.caption || `${trip.name} cover photo` }} />
       <main className="container has-tabbar">
         {trip.archivedAt && (
           <p className="notice">
@@ -65,7 +71,12 @@ export default async function TripDetailsPage({ params, searchParams }) {
             {can(user, 'edit') && <Link href={`/trips/${trip.id}/edit`}>Restore it</Link>}
           </p>
         )}
-        <TripDetailsClient initialTrip={clientTrip} initialTab={typeof tab === 'string' ? tab : undefined} user={clientUser(user)} />
+        <TripDetailsClient
+          initialTrip={clientTrip}
+          initialTab={typeof tab === 'string' ? tab : undefined}
+          defaultTab={phase.phase === 'past' ? 'photos' : 'itinerary'}
+          user={clientUser(user)}
+        />
       </main>
     </div>
   );

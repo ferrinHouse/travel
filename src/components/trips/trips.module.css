@@ -239,3 +239,38 @@
 .archived[open] > summary {
   margin-bottom: var(--space-4);
 }
+
+/* Story page toolbar */
+.storyActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+/* Share link */
+.shareUrl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.shareUrl input {
+  flex: 1 1 16rem;
+  min-width: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--step--1);
+}
+
+.share {
+  border-color: var(--border);
+}
+
+.shareButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
