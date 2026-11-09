@@ -3,15 +3,13 @@
 // and automated accessibility checks (axe-core) in both themes.
 import { describe, test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRequire } from 'node:module';
-import { startApp } from './support/server.mjs';
+import { newContext, openPage, sessionCookieHeader, startApp } from './support/server.mjs';
 import { openTrip } from './support/trip-page.mjs';
+import { axeViolations } from './support/axe.mjs';
 import { daysFromToday } from '../support/fixtures.mjs';
 import { tripPhase, phaseLabel } from '../../src/lib/trip-status.js';
 import { THEME_STORAGE_KEY } from '../../src/lib/theme.js';
 
-const require = createRequire(import.meta.url);
-const AXE_PATH = require.resolve('axe-core/axe.min.js');
 
 const DARK_BG = 'rgb(13, 17, 23)'; // THEME_COLORS.dark
 const LIGHT_BG = 'rgb(244, 246, 248)'; // THEME_COLORS.light
@@ -60,22 +58,13 @@ before(async () => {
 });
 after(() => app?.stop());
 
-async function axeViolations(page) {
-  await page.addScriptTag({ path: AXE_PATH });
-  return page.evaluate(async () => {
-    const result = await window.axe.run(document, {
-      runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] },
-    });
-    return result.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
-  });
-}
 
 const htmlTheme = (page) => page.evaluate(() => document.documentElement.dataset.theme);
 const bodyBg = (page) => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 
 describe('theme', () => {
   test('follows the system setting by default', async () => {
-    const context = await app.browser.newContext({ colorScheme: 'dark' });
+    const context = await newContext(app, { colorScheme: 'dark' });
     const page = await context.newPage();
     await page.goto(app.baseURL);
     assert.equal(await htmlTheme(page), 'dark');
@@ -85,7 +74,7 @@ describe('theme', () => {
   });
 
   test('a chosen theme is saved, survives reload and is applied before first paint', async () => {
-    const context = await app.browser.newContext({ colorScheme: 'light' });
+    const context = await newContext(app, { colorScheme: 'light' });
     // Record the theme at the moment <body> is first parsed, i.e. before any paint.
     await context.addInitScript(() => {
       new MutationObserver((_, obs) => {
@@ -118,7 +107,7 @@ describe('theme', () => {
   });
 
   test('"System" tracks OS changes live', async () => {
-    const context = await app.browser.newContext({ colorScheme: 'light' });
+    const context = await newContext(app, { colorScheme: 'light' });
     const page = await context.newPage();
     await page.goto(app.baseURL);
     await page.waitForLoadState('networkidle');
@@ -128,7 +117,7 @@ describe('theme', () => {
   });
 
   test('declares theme-color for light and dark browser chrome', async () => {
-    const context = await app.browser.newContext();
+    const context = await newContext(app);
     const page = await context.newPage();
     await page.goto(app.baseURL);
     const metas = await page.locator('meta[name="theme-color"]').evaluateAll((els) =>
@@ -163,7 +152,7 @@ async function waitForTitle(page, expected) {
 
 describe('metadata', () => {
   test('pages get descriptive titles', async () => {
-    const context = await app.browser.newContext();
+    const context = await newContext(app);
     const page = await context.newPage();
     await page.goto(app.baseURL);
     await waitForTitle(page, 'Family Travel Adventures');
@@ -200,8 +189,11 @@ describe('trip hero', () => {
   });
 
   test('junk colours fall back safely and never reach the HTML', async () => {
+    const cookie = await sessionCookieHeader(app, 'viewer');
     for (const path of ['/', '/trips/junkcolor']) {
-      const html = await (await fetch(`${app.baseURL}${path}`)).text();
+      const res = await fetch(`${app.apiURL}${path}`, { headers: { cookie } });
+      assert.equal(res.status, 200, `${path} rendered (not a sign-in redirect)`);
+      const html = await res.text();
       assert.ok(!html.includes('__pwned'), `${path} leaks the payload`);
       assert.ok(!html.includes('evil.example'), `${path} leaks the url()`);
     }
@@ -258,7 +250,7 @@ describe('during a trip', () => {
 
 describe('dashboard', () => {
   test('the next trip is featured with its countdown', async () => {
-    const context = await app.browser.newContext();
+    const context = await newContext(app);
     const page = await context.newPage();
     await page.goto(app.baseURL);
     const featured = page.locator('[data-featured]');
@@ -294,9 +286,47 @@ describe('mobile tab bar', () => {
   });
 });
 
+describe('site header on phones', () => {
+  // The bar holds the site name, the theme toggle and the account avatar.
+  const headerLayout = (page) =>
+    page.evaluate(() => {
+      const brand = document.querySelector('.site-brand');
+      const text = brand.querySelector('.site-brand-text');
+      const actions = brand.nextElementSibling.getBoundingClientRect();
+      return {
+        clipped: text ? text.scrollWidth > text.clientWidth : brand.scrollWidth > brand.clientWidth,
+        ellipsis: text ? getComputedStyle(text).textOverflow : 'none',
+        brandRight: brand.getBoundingClientRect().right,
+        actionsLeft: actions.left,
+        actionsRight: actions.right,
+        pageOverflow: document.documentElement.scrollWidth > window.innerWidth,
+      };
+    });
+
+  test('the whole site name fits beside the controls on a 375px phone', async () => {
+    const { page, context } = await openPage(app, '/', { as: 'admin', viewport: { width: 375, height: 700 } });
+    const layout = await headerLayout(page);
+    assert.equal(layout.clipped, false, 'site name is not cut off');
+    assert.ok(layout.brandRight <= layout.actionsLeft, 'name and controls do not overlap');
+    assert.ok(layout.actionsRight <= 375, 'controls stay on screen');
+    assert.equal(layout.pageOverflow, false);
+    await context.close();
+  });
+
+  test('on very narrow screens the name ends in "…" rather than being chopped', async () => {
+    const { page, context } = await openPage(app, '/', { as: 'admin', viewport: { width: 300, height: 640 } });
+    const layout = await headerLayout(page);
+    if (layout.clipped) assert.equal(layout.ellipsis, 'ellipsis');
+    assert.ok(layout.brandRight <= layout.actionsLeft, 'name and controls do not overlap');
+    assert.ok(layout.actionsRight <= 300, 'controls stay on screen');
+    assert.equal(layout.pageOverflow, false);
+    await context.close();
+  });
+});
+
 describe('reduced motion', () => {
   test('hover and entrance animations are switched off', async () => {
-    const context = await app.browser.newContext({ reducedMotion: 'reduce' });
+    const context = await newContext(app, { reducedMotion: 'reduce' });
     const page = await context.newPage();
     await page.goto(app.baseURL);
     const duration = await page.locator('.card').first().evaluate((el) => getComputedStyle(el).transitionDuration);
@@ -308,7 +338,7 @@ describe('reduced motion', () => {
 describe('accessibility (axe, WCAG 2.1 AA)', () => {
   for (const colorScheme of ['light', 'dark']) {
     test(`dashboard has no violations (${colorScheme})`, async () => {
-      const context = await app.browser.newContext({ colorScheme });
+      const context = await newContext(app, { colorScheme });
       const page = await context.newPage();
       await page.goto(app.baseURL);
       await page.waitForLoadState('networkidle');

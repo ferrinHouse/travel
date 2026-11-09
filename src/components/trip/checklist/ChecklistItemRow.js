@@ -3,7 +3,7 @@
 import { useId, useState } from 'react';
 import styles from '../trip.module.css';
 
-export default function ChecklistItemRow({ item, canEdit, onToggle, onRename, onDelete }) {
+export default function ChecklistItemRow({ item, canEdit, canToggle = true, onToggle, onRename, onDelete }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(item.text);
   const checkboxId = useId();
@@ -31,6 +31,7 @@ export default function ChecklistItemRow({ item, canEdit, onToggle, onRename, on
           className="checkbox-custom"
           checked={item.isCompleted}
           onChange={onToggle}
+          disabled={!canToggle}
           aria-label={editing ? item.text : undefined}
         />
         {editing ? (

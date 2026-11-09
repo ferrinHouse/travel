@@ -1,4 +1,4 @@
-// Browser tests for edit mode: unlocking, and every add/edit/delete flow.
+// Browser tests for edit mode: the admin switch, and every add/edit/delete flow.
 import { describe, test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { startApp } from './support/server.mjs';
@@ -13,40 +13,27 @@ after(() => app?.stop());
 
 const activityRow = (page, text) => page.locator('.activity-item', { hasText: text });
 
-describe('unlocking edit mode', () => {
-  test('wrong passcode shows an error; Escape closes the dialog', async () => {
-    const { page, context } = await openTrip(app);
-    await page.getByRole('button', { name: 'Unlock Editing' }).click();
-    const dialog = page.getByRole('dialog', { name: /Enter Admin Passcode/ });
-    await dialog.waitFor();
-    assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label')), 'Passcode', 'focus starts in the input');
+describe('edit mode (admins)', () => {
+  test('is off by default and toggles the edit controls', async () => {
+    const { page, context } = await openTrip(app, { as: 'admin' });
+    const toggle = page.getByRole('button', { name: 'Edit mode' });
+    assert.equal(await toggle.getAttribute('aria-pressed'), 'false');
+    assert.equal(await page.getByRole('button', { name: '+ Add Activity' }).count(), 0);
 
-    await dialog.getByLabel('Passcode').fill('definitely-wrong');
-    await dialog.getByRole('button', { name: 'Unlock' }).click();
-    await dialog.getByRole('alert').waitFor();
-    assert.equal(await dialog.getByRole('alert').innerText(), 'Incorrect passcode. Try again.');
+    await toggle.click();
+    await page.getByText('Editing the plan').waitFor();
+    assert.equal(await page.getByRole('button', { name: 'Done editing' }).getAttribute('aria-pressed'), 'true');
+    assert.ok((await page.getByRole('button', { name: '+ Add Activity' }).count()) > 0);
 
-    await page.keyboard.press('Escape');
-    await dialog.waitFor({ state: 'hidden' });
-    assert.equal(await page.getByText('VIEW ONLY MODE').count(), 1);
+    await page.getByRole('button', { name: 'Done editing' }).click();
+    await page.getByText('Viewing the plan').waitFor();
+    assert.equal(await page.getByRole('button', { name: '+ Add Activity' }).count(), 0);
     await context.close();
   });
 
-  test('correct passcode unlocks; Lock Editing locks again', async () => {
-    const { page, context } = await openTrip(app);
-    await page.getByRole('button', { name: 'Unlock Editing' }).click();
-    await page.getByLabel('Passcode', { exact: true }).fill(app.passcode);
-    await page.getByRole('button', { name: 'Unlock', exact: true }).click();
-    await page.getByText('ADMIN EDIT MODE ENABLED').waitFor();
-    assert.ok((await page.getByRole('button', { name: '+ Add Activity' }).count()) > 0);
-
-    // Survives a reload (cookie)
-    await page.reload();
-    await page.getByText('ADMIN EDIT MODE ENABLED').waitFor();
-
-    await page.getByRole('button', { name: 'Lock Editing' }).click();
-    await page.getByText('VIEW ONLY MODE').waitFor();
-    assert.equal(await page.getByRole('button', { name: '+ Add Activity' }).count(), 0);
+  test('members never get the switch', async () => {
+    const { page, context } = await openTrip(app, { as: 'member' });
+    assert.equal(await page.getByRole('button', { name: 'Edit mode' }).count(), 0);
     await context.close();
   });
 });
@@ -174,9 +161,13 @@ describe('logistics editing', () => {
   test('edit a card', async () => {
     const { page, context } = await openTrip(app, { tab: 'logistics', admin: true });
     await page.locator('.card', { hasText: 'Flights' }).getByRole('button', { name: 'Edit' }).click();
-    await page.getByLabel('Content (Markdown supported)').fill('UA 456 at noon');
+    const content = page.getByLabel('Content (Markdown supported)');
+    await content.fill('UA 456 at noon');
     await page.getByRole('button', { name: 'Save', exact: true }).click();
-    await page.getByText('UA 456 at noon').waitFor();
+    // React mirrors a controlled textarea's value into its text, so wait for the
+    // form to close (the save has finished) before looking for the new text.
+    await content.waitFor({ state: 'detached' });
+    await page.locator('.card', { hasText: 'Flights' }).getByText('UA 456 at noon').waitFor();
     assert.equal((await app.prisma.logisticsCard.findFirst({ where: { tripId: 'testville', title: 'Flights' } })).content, 'UA 456 at noon');
     await context.close();
   });

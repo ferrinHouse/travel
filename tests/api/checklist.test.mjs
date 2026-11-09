@@ -3,12 +3,14 @@ import assert from 'node:assert/strict';
 import { createTestDb } from '../support/test-db.mjs';
 import { seedTrip } from '../support/fixtures.mjs';
 import { saveChecklistItem, deleteChecklistItem } from '../../src/lib/api/checklist.js';
+import { actor } from '../support/users.mjs';
 import { runHandler } from '../../src/lib/api/run.js';
 
 let db;
 let trip;
-const admin = (body) => ({ db: db.prisma, isAdmin: true, body });
-const guest = (body) => ({ db: db.prisma, isAdmin: false, body });
+const admin = (body) => ({ db: db.prisma, user: actor('admin'), body });
+const guest = (body) => ({ db: db.prisma, user: null, body });
+const member = (body) => ({ db: db.prisma, user: actor('member'), body });
 const item = (text) => trip.checklist.find((i) => i.text === text);
 
 before(async () => {
@@ -21,27 +23,27 @@ beforeEach(async () => {
 });
 
 describe('saveChecklistItem: toggling', () => {
-  test('anyone can tick and untick an item', async () => {
+  test('members can tick and untick an item', async () => {
     const sunscreen = item('Sunscreen');
-    let res = await runHandler(saveChecklistItem, guest({ id: sunscreen.id, isCompleted: true }));
+    let res = await runHandler(saveChecklistItem, member({ id: sunscreen.id, isCompleted: true }));
     assert.equal(res.status, 200);
     assert.equal(res.body.item.isCompleted, true);
-    res = await runHandler(saveChecklistItem, guest({ id: sunscreen.id, isCompleted: false }));
+    res = await runHandler(saveChecklistItem, member({ id: sunscreen.id, isCompleted: false }));
     assert.equal(res.body.item.isCompleted, false);
   });
 
   test('404 for an unknown item', async () => {
-    const res = await runHandler(saveChecklistItem, guest({ id: 999999, isCompleted: true }));
+    const res = await runHandler(saveChecklistItem, member({ id: 999999, isCompleted: true }));
     assert.equal(res.status, 404);
   });
 
   test('400 when there is nothing to change', async () => {
-    const res = await runHandler(saveChecklistItem, guest({ id: item('Sunscreen').id }));
+    const res = await runHandler(saveChecklistItem, member({ id: item('Sunscreen').id }));
     assert.equal(res.status, 400);
   });
 
   test('400 for a non-boolean isCompleted', async () => {
-    const res = await runHandler(saveChecklistItem, guest({ id: item('Sunscreen').id, isCompleted: 'yes' }));
+    const res = await runHandler(saveChecklistItem, member({ id: item('Sunscreen').id, isCompleted: 'yes' }));
     assert.equal(res.status, 400);
   });
 });

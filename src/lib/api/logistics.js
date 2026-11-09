@@ -1,8 +1,11 @@
-import { badRequest, isId, isObject, notFound, ok, text, tripExists, unauthorized } from './run.js';
+import { badRequest, isId, isObject, notFound, ok, text, tripExists } from './run.js';
+import { deny } from './guard.js';
 
 /** POST /api/logistics: creates a card when there is no `id`, otherwise updates it. */
-export async function saveLogisticsCard({ db, isAdmin, body }) {
-  if (!isAdmin) return unauthorized();
+export async function saveLogisticsCard(ctx) {
+  const denied = deny(ctx, 'edit');
+  if (denied) return denied;
+  const { db, body } = ctx;
   if (!isObject(body)) return badRequest();
   const title = text(body.title);
   const content = typeof body.content === 'string' && body.content.trim() ? body.content : null;
@@ -24,8 +27,10 @@ export async function saveLogisticsCard({ db, isAdmin, body }) {
   return ok({ card });
 }
 
-export async function deleteLogisticsCard({ db, isAdmin, body }) {
-  if (!isAdmin) return unauthorized();
+export async function deleteLogisticsCard(ctx) {
+  const denied = deny(ctx, 'edit');
+  if (denied) return denied;
+  const { db, body } = ctx;
   if (!isObject(body) || !isId(body.id)) return badRequest();
   await db.logisticsCard.delete({ where: { id: body.id } });
   return ok();

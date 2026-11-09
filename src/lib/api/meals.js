@@ -1,9 +1,12 @@
 import { MEAL_TYPES } from '../meals.js';
-import { badRequest, isObject, notFound, ok, optionalString, tripExists, unauthorized } from './run.js';
+import { badRequest, isObject, notFound, ok, optionalString, tripExists } from './run.js';
+import { deny } from './guard.js';
 
 /** Upserts one meal slot (trip + day + meal type). An empty name deletes it. */
-export async function saveMeal({ db, isAdmin, body }) {
-  if (!isAdmin) return unauthorized();
+export async function saveMeal(ctx) {
+  const denied = deny(ctx, 'edit');
+  if (denied) return denied;
+  const { db, body } = ctx;
   if (!isObject(body)) return badRequest();
   const { tripId, dayNumber, mealType, mealName } = body;
   if (typeof tripId !== 'string' || !tripId) return badRequest();

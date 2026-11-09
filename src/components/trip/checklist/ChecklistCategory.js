@@ -10,14 +10,14 @@ import ChecklistItemRow from './ChecklistItemRow';
 import styles from '../trip.module.css';
 
 export default function ChecklistCategory({ category, items }) {
-  const { trip, dispatch, canEdit } = useTrip();
+  const { trip, dispatch, canEdit, canAdd, canToggle } = useTrip();
   const toast = useToast();
   const confirm = useConfirm();
   const [newText, setNewText] = useState('');
   const [adding, setAdding] = useState(false);
   const inputId = useId();
 
-  // Ticking items is open to everyone; roll back if the save fails.
+  // Members and admins tick items; roll back if the save fails.
   const toggle = async (item) => {
     const next = !item.isCompleted;
     dispatch({ type: 'checklist/patch', id: item.id, patch: { isCompleted: next } });
@@ -88,6 +88,7 @@ export default function ChecklistCategory({ category, items }) {
               key={item.id}
               item={item}
               canEdit={canEdit}
+              canToggle={canToggle}
               onToggle={() => toggle(item)}
               onRename={(text) => rename(item, text)}
               onDelete={() => remove(item)}
@@ -96,7 +97,7 @@ export default function ChecklistCategory({ category, items }) {
         )}
       </div>
 
-      {canEdit && (
+      {canAdd && (
         <form className={styles.addRow} onSubmit={add}>
           <label htmlFor={inputId} className="visually-hidden">
             Add item to {checklistLabel(category)}

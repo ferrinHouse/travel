@@ -5,6 +5,7 @@ import { tripTheme } from '@/lib/color';
 import { tripPhase } from '@/lib/trip-status';
 import TripHero from '@/components/trips/TripHero';
 import TripDetailsClient from '@/components/trip/TripDetailsClient';
+import { getCurrentUser, requirePageUser, clientUser } from '@/lib/auth/current-user';
 
 export const revalidate = 0; // Always render fresh so edits show immediately
 
@@ -32,6 +33,7 @@ const getTripDetails = cache(async (id) => {
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
+  if (!(await getCurrentUser())) return { title: 'Sign in' };
   const trip = await getTripDetails(id);
   if (!trip) return { title: 'Trip not found' };
   return { title: trip.name, description: trip.description || `${trip.name}: ${trip.dates}` };
@@ -40,6 +42,7 @@ export async function generateMetadata({ params }) {
 export default async function TripDetailsPage({ params, searchParams }) {
   const { id } = await params;
   const { tab } = await searchParams;
+  const user = await requirePageUser(`/trips/${encodeURIComponent(id)}`);
   const trip = await getTripDetails(id);
 
   if (!trip) {
@@ -54,7 +57,7 @@ export default async function TripDetailsPage({ params, searchParams }) {
     <div data-trip={trip.id} style={tripTheme(trip)}>
       <TripHero trip={trip} status={tripPhase(trip)} />
       <main className="container has-tabbar">
-        <TripDetailsClient initialTrip={clientTrip} initialTab={typeof tab === 'string' ? tab : undefined} />
+        <TripDetailsClient initialTrip={clientTrip} initialTab={typeof tab === 'string' ? tab : undefined} user={clientUser(user)} />
       </main>
     </div>
   );

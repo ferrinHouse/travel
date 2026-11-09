@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useReducer, useState } from 'react';
+import { useMemo, useReducer, useState } from 'react';
 import { tripReducer } from '@/lib/trip-reducer';
-import { apiFetch } from '@/lib/api-client';
+import { tripPermissions } from '@/lib/trip-permissions';
+import { useBrowserFlag } from '@/components/auth/useBrowserFlag';
 import { TripProvider } from './TripContext';
 import TripTabs, { TABS, panelId, tabId } from './TripTabs';
 import EditModeBar from './EditModeBar';
@@ -18,18 +19,16 @@ const PANELS = {
   meals: MealsTab,
 };
 
-export default function TripDetailsClient({ initialTrip, initialTab }) {
+const isBrowser = () => true;
+
+export default function TripDetailsClient({ initialTrip, initialTab, user }) {
   const [trip, dispatch] = useReducer(tripReducer, initialTrip);
-  const [canEdit, setCanEdit] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  // Marks the page interactive (end-to-end tests wait for it before clicking).
+  const hydrated = useBrowserFlag(isBrowser);
   const [activeTab, setActiveTab] = useState(
     TABS.some((t) => t.id === initialTab) ? initialTab : TABS[0].id
   );
-
-  useEffect(() => {
-    apiFetch('/api/auth')
-      .then((data) => setCanEdit(!!data.authenticated))
-      .catch(() => setCanEdit(false));
-  }, []);
 
   const changeTab = (id) => {
     setActiveTab(id);
@@ -39,12 +38,14 @@ export default function TripDetailsClient({ initialTrip, initialTab }) {
     window.history.replaceState(null, '', url);
   };
 
-  const context = useMemo(() => ({ trip, dispatch, canEdit }), [trip, canEdit]);
+  const permissions = useMemo(() => tripPermissions(user, editMode), [user, editMode]);
+  const context = useMemo(() => ({ trip, dispatch, ...permissions }), [trip, permissions]);
   const Panel = PANELS[activeTab];
 
   return (
     <TripProvider value={context}>
-      <EditModeBar canEdit={canEdit} onChange={setCanEdit} />
+      <div data-hydrated={hydrated || undefined} hidden />
+      <EditModeBar {...permissions} editMode={editMode} onChange={setEditMode} />
       <TripTabs active={activeTab} onChange={changeTab} />
       <div role="tabpanel" id={panelId(activeTab)} aria-labelledby={tabId(activeTab)}>
         <Panel />

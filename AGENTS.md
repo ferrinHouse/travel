@@ -17,21 +17,28 @@ A trip itinerary/logistics/packing/meal-planning app for the Ferrin household. F
 
 ### Layout
 
-- `src/app/` — App Router pages + `src/app/api/*` route handlers (REST-style, one folder per resource: activities, auth, checklist, grocery, health, logistics, meals). Route files are thin: `export const POST = route(handler)` via `src/lib/api/next-route.js`
-- `src/lib/api/` — framework-free API handlers (`({ db, isAdmin, body }) => { status, body }`) holding the validation and auth checks; `run.js` has the result helpers and maps Prisma not-found errors to 404
+- `src/app/` — App Router pages + `src/app/api/*` route handlers (REST-style, one folder per resource: account, activities, auth, checklist, grocery, health, logistics, meals, users). Route files are thin: `export const POST = route(handler)` via `src/lib/api/next-route.js`, which resolves the session cookie to `ctx.user`, blocks cross-site writes, parses the body (query string for GET) and applies `result.cookies`
+- `src/lib/api/` — framework-free API handlers (`(ctx) => { status, body, cookies? }`, ctx = `{ db, user, body, sessionToken, request, config, limiter?, webauthn?, now? }`) holding the validation and permission checks; `run.js` has the result helpers and maps Prisma not-found errors to 404; `guard.js` has `deny(ctx, action)`; `request-context.js` turns env + headers into `config`/`request`
+- `src/lib/auth/` — pure auth pieces (password hashing, tokens, roles/`can()`, session policy, rate limiter, origin check, safe redirects, proxy rules) plus `current-user.js` (server-only: `getCurrentUser()`, `requirePageUser(path, action)` for pages)
+- `src/proxy.js` — optimistic redirect to `/login` when there is no session cookie (API routes are excluded and return 401 themselves)
 - `src/components/trip/` — trip detail page: `TripDetailsClient` (tab shell + `useReducer` from `src/lib/trip-reducer.js`) with one folder per tab (`itinerary/`, `logistics/`, `checklist/`, `meals/`)
 - `src/components/ui/` — shared UI kit: `Modal` (native `<dialog>`), `Toast`, `ConfirmDialog`, `Markdown`, `Skeleton`, `EmptyState`. `Markdown` and the theme script in `layout.js` are the only `dangerouslySetInnerHTML` uses
-- `src/components/site/` — `SiteHeader` (sticky bar on every page) and `ThemeToggle` (System/Light/Dark); `src/components/trips/` — server-rendered `TripHero`, `TripCard`, `FeaturedTrip`
+- `src/components/site/` — `SiteHeader` (sticky bar on every page), `ThemeToggle` (System/Light/Dark) and `UserMenu`; `src/components/trips/` — server-rendered `TripHero`, `TripCard`, `FeaturedTrip`; `src/components/auth/`, `account/`, `admin/` — sign-in, setup, invite, account and People pages
 - `src/styles/` — `tokens.css` (semantic colour roles for light and `[data-theme='dark']`, type/spacing/radius/shadow/motion scales, legacy aliases), `base.css`, `components.css`, `utilities.css`, imported once in `layout.js`
 - `src/lib/db.js` — Prisma client singleton (cached on `global.prisma` outside production to survive dev hot-reload)
 - `src/lib/helpers.js` — time parsing, meal icons, date logic shared across pages; `src/lib/markdown.js` — safe markdown (http/https/mailto/tel links only)
 - `src/lib/color.js` — `tripTheme(trip)` turns a trip's colours into AA-checked `--trip-*` CSS variables; `src/lib/theme.js` — theme preference + the inline no-flash `<head>` script; `src/lib/trip-status.js` — `tripPhase` (upcoming / Day N of M / past) and labels
-- `prisma/schema.prisma` — models: Trip, ItineraryDay, ItineraryActivity, MealPlan, ChecklistItem, LogisticsCard, GroceryItem, all keyed off `Trip.id` (a slug like `"chicago"`)
+- `prisma/schema.prisma` — trip models: Trip, ItineraryDay, ItineraryActivity, MealPlan, ChecklistItem, LogisticsCard, GroceryItem, all keyed off `Trip.id` (a slug like `"chicago"`); auth models: User, Session, Passkey, Invite, AuthChallenge
+- `scripts/admin-reset.mjs` — lockout recovery (prints a one-time reset link); self-contained better-sqlite3, copied into the image
 - `prisma/seed.js` / `seed-meals.js` — the only way trips currently get created (no in-app trip creation UI yet)
 
 ### Auth model
 
-Single shared admin passcode (`ADMIN_PASSCODE` env var) gates mutations via an HTTP-only `admin_authenticated` cookie set by `POST /api/auth`. Public/unauthenticated users can always view itineraries and toggle checklist/grocery checkboxes. Don't add per-user auth without checking with the user first — a rewrite to Auth.js/OAuth is on the roadmap in README.md but not started.
+Per-person accounts; **everything requires sign-in** (the proxy redirects pages to `/login`, API handlers return 401). Sign-in is username + password (scrypt) or a passkey (`@simplewebauthn/server`, injected as `ctx.webauthn` so tests use a fake). Sessions are a random token in the HTTP-only `travel_session` cookie (SameSite=Lax, 90-day max, 30 days idle); the DB stores only its SHA-256. Invite/reset links work the same way (single use, hashed).
+
+Roles in `src/lib/auth/roles.js` via `can(user, action)`: `viewer` → view; `member` → also `toggle` and `add-item` (checklist/grocery); `admin` → also `edit` and `manage-users`. On the trip page admins edit only with "Edit mode" on (`src/lib/trip-permissions.js`).
+
+First admin: set `SETUP_TOKEN` and use `/setup` (404 once any user exists). Production needs `APP_ORIGIN` (k8s `travel-config`); passkeys are bound to its hostname. Don't add OAuth/third-party identity without checking with the user first.
 
 ### Commands
 
@@ -49,7 +56,9 @@ npm run seed:meals -- --force  # re-seed meal/grocery data (seed scripts wipe da
 ### Conventions
 
 - API routes return plain JSON, no shared response wrapper; follow the existing pattern in `src/app/api/*/route.js` for a new endpoint rather than introducing one.
-- Mutating endpoints check `isAdmin` at the top of the handler function in `src/lib/api/*` — mirror that rather than adding middleware. New endpoints: write the handler in `src/lib/api/`, wire it with `route()`, and test it in `tests/api/`.
+- Every handler starts with `const denied = deny(ctx, '<action>'); if (denied) return denied;` (401 signed out, 403 wrong role) — mirror that rather than adding middleware, and add the endpoint to `tests/api/permissions.test.mjs` if it touches trip data. New endpoints: write the handler in `src/lib/api/`, wire it with `route()`, and test it in `tests/api/` (use `ctx()`/`createUser()`/`actor()` from `tests/support/users.mjs`).
+- Server pages call `requirePageUser(path, action?)` before loading data; the proxy alone is not a security check.
+- After sign-in/out, navigate with `window.location.assign()` (a full load) so the header and server components see the new session.
 - Client mutations go through `apiFetch` (`src/lib/api-client.js`) and report failures with `useToast()`; confirmations use `useConfirm()`, never `alert`/`confirm`.
 - Pure logic goes in `src/lib/*.js` with relative imports (no `@/`, no `next/*`) so `node --test` can load it; add a test in `tests/`.
 - Never enable SQLite WAL mode — production SQLite is on NFS.

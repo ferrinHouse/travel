@@ -42,3 +42,110 @@
   opacity: 0;
   cursor: pointer;
 }
+
+/* User menu */
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.userMenu {
+  position: relative;
+}
+
+.userButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 3px var(--space-3) 3px 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background-color: var(--surface-2);
+  color: var(--text);
+  font-weight: 650;
+  cursor: pointer;
+  list-style: none;
+}
+
+.userButton::-webkit-details-marker {
+  display: none;
+}
+
+.userButton:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-pill);
+  background-color: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--space-2));
+  min-width: 12rem;
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-raised);
+  box-shadow: var(--shadow-2);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+}
+
+.menuItem {
+  display: block;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.menuItem:hover,
+.menuItem:focus-visible {
+  background-color: var(--surface-2);
+}
+
+@media (max-width: 480px) {
+  /* Avatar only on phones; the name stays available to screen readers. */
+  .userName {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .userButton {
+    padding-right: 3px;
+  }
+
+  /* Room for the whole site name beside the toggle and avatar. */
+  .headerActions {
+    flex-shrink: 0;
+    gap: var(--space-2);
+  }
+
+  .themeOption {
+    width: 32px;
+    height: 32px;
+  }
+}

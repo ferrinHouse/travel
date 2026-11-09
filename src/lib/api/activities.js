@@ -1,4 +1,5 @@
-import { badRequest, isId, isObject, notFound, ok, optionalString, text, unauthorized } from './run.js';
+import { badRequest, isId, isObject, notFound, ok, optionalString, text } from './run.js';
+import { deny } from './guard.js';
 
 function activityFields(body) {
   return {
@@ -9,8 +10,10 @@ function activityFields(body) {
   };
 }
 
-export async function createActivity({ db, isAdmin, body }) {
-  if (!isAdmin) return unauthorized();
+export async function createActivity(ctx) {
+  const denied = deny(ctx, 'edit');
+  if (denied) return denied;
+  const { db, body } = ctx;
   if (!isObject(body) || !isId(body.dayId)) return badRequest();
   const fields = activityFields(body);
   if (!fields.description) return badRequest('Description is required');
@@ -25,8 +28,10 @@ export async function createActivity({ db, isAdmin, body }) {
   return ok({ activity });
 }
 
-export async function updateActivity({ db, isAdmin, body }) {
-  if (!isAdmin) return unauthorized();
+export async function updateActivity(ctx) {
+  const denied = deny(ctx, 'edit');
+  if (denied) return denied;
+  const { db, body } = ctx;
   if (!isObject(body) || !isId(body.id)) return badRequest();
   const fields = activityFields(body);
   if (!fields.description) return badRequest('Description is required');
@@ -35,8 +40,10 @@ export async function updateActivity({ db, isAdmin, body }) {
   return ok({ activity });
 }
 
-export async function deleteActivity({ db, isAdmin, body }) {
-  if (!isAdmin) return unauthorized();
+export async function deleteActivity(ctx) {
+  const denied = deny(ctx, 'edit');
+  if (denied) return denied;
+  const { db, body } = ctx;
   if (!isObject(body) || !isId(body.id)) return badRequest();
   await db.itineraryActivity.delete({ where: { id: body.id } });
   return ok();

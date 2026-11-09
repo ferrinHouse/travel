@@ -1,7 +1,6 @@
 // Boots the production build (`next start`) against a throwaway database for
 // end-to-end tests. Run `npm run build` first (npm run test:e2e does this).
 import { spawn } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
@@ -10,6 +9,8 @@ import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import { chromium } from 'playwright';
 import { createDbFile, ROOT } from '../../support/test-db.mjs';
 import { daysFromToday, seedTrip } from '../../support/fixtures.mjs';
+import { createUser, PASSWORD } from '../../support/users.mjs';
+import { startSession } from '../../../src/lib/api/auth.js';
 
 const NEXT_BIN = path.join(ROOT, 'node_modules', 'next', 'dist', 'bin', 'next');
 
@@ -40,11 +41,21 @@ async function waitForHealthy(baseURL, child, output) {
   throw new Error(`Server did not become healthy:\n${output()}`);
 }
 
+export const SETUP_TOKEN = 'e2e-setup-token';
+export const ROLES = ['viewer', 'member', 'admin'];
+
 /**
- * Starts the app with two seeded trips: "testville" (upcoming) and
- * "oldtown" (past). Returns { baseURL, passcode, prisma, browser, stop }.
+ * Starts the app with two seeded trips: "testville" (upcoming) and "oldtown"
+ * (past), and one user per role (usernames = role names, password PASSWORD).
+ * Pass { users: false } for a brand-new site with nobody signed up yet.
+ *
+ * The browser talks to http://localhost:<port> (passkeys need a real hostname,
+ * not an IP), mapped to 127.0.0.1 inside Chromium; Node-side fetches use
+ * `apiURL` (127.0.0.1) to avoid IPv6 lookups.
+ *
+ * Returns { baseURL, apiURL, users, password, prisma, browser, stop }.
  */
-export async function startApp() {
+export async function startApp({ users: withUsers = true } = {}) {
   if (!fs.existsSync(path.join(ROOT, '.next', 'BUILD_ID'))) {
     throw new Error('No production build found. Run `npm run build` (or `npm run test:e2e`).');
   }
@@ -59,10 +70,14 @@ export async function startApp() {
     endDate: daysFromToday(-35),
     status: 'past',
   });
+  const users = {};
+  if (withUsers) {
+    for (const role of ROLES) users[role] = await createUser(prisma, { username: role, role, displayName: `${role[0].toUpperCase()}${role.slice(1)} Ferrin` });
+  }
 
   const port = await freePort();
-  const baseURL = `http://127.0.0.1:${port}`;
-  const passcode = `e2e-${randomUUID()}`;
+  const baseURL = `http://localhost:${port}`;
+  const apiURL = `http://127.0.0.1:${port}`;
   let log = '';
   const child = spawn(process.execPath, [NEXT_BIN, 'start', '-p', String(port), '-H', '127.0.0.1'], {
     cwd: ROOT,
@@ -70,7 +85,8 @@ export async function startApp() {
       ...process.env,
       NODE_ENV: 'production',
       DATABASE_URL: db.url,
-      ADMIN_PASSCODE: passcode,
+      APP_ORIGIN: baseURL,
+      SETUP_TOKEN,
       NEXT_TELEMETRY_DISABLED: '1',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -79,18 +95,20 @@ export async function startApp() {
   child.stderr.on('data', (d) => (log += d));
 
   try {
-    await waitForHealthy(baseURL, child, () => log);
+    await waitForHealthy(apiURL, child, () => log);
   } catch (err) {
     child.kill();
     await prisma.$disconnect();
     throw err;
   }
 
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ args: [`--host-resolver-rules=MAP localhost 127.0.0.1`] });
 
   return {
     baseURL,
-    passcode,
+    apiURL,
+    users,
+    password: PASSWORD,
     prisma,
     browser,
     serverLog: () => log,
@@ -107,15 +125,30 @@ export async function startApp() {
   };
 }
 
-/** Sets the legacy admin cookie on a browser context by logging in through the API. */
-export async function loginContext(app, context) {
-  const res = await context.request.post(`${app.baseURL}/api/auth`, { data: { passcode: app.passcode } });
-  if (!res.ok()) throw new Error(`login failed: ${res.status()}`);
+/** A fresh session token for a seeded user (straight in the DB: no login rate limit). */
+export async function sessionToken(app, role) {
+  const { token } = await startSession(app.prisma, app.users[role], { userAgent: 'e2e' });
+  return token;
 }
 
-/** Opens a page on a fresh context and waits until React has hydrated it. */
-export async function openPage(app, urlPath, { context, viewport } = {}) {
-  const ctx = context ?? (await app.browser.newContext({ viewport: viewport ?? { width: 1280, height: 900 } }));
+/** `Cookie` header value for Node-side fetches as `role`. */
+export const sessionCookieHeader = async (app, role) => `travel_session=${await sessionToken(app, role)}`;
+
+/** Signs a browser context in as `role` (viewer | member | admin). */
+export async function signInContext(app, context, role) {
+  await context.addCookies([{ name: 'travel_session', value: await sessionToken(app, role), url: app.baseURL, httpOnly: true, sameSite: 'Lax' }]);
+}
+
+/** A browser context, signed in as `as` (default member; null = signed out). */
+export async function newContext(app, { as = 'member', ...options } = {}) {
+  const context = await app.browser.newContext(options);
+  if (as) await signInContext(app, context, as);
+  return context;
+}
+
+/** Opens a page on a fresh context and waits until the network is idle. */
+export async function openPage(app, urlPath, { context, viewport, as } = {}) {
+  const ctx = context ?? (await newContext(app, { as, viewport: viewport ?? { width: 1280, height: 900 } }));
   const page = await ctx.newPage();
   await page.goto(`${app.baseURL}${urlPath}`);
   await page.waitForLoadState('networkidle');
