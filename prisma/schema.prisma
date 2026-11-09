@@ -22,7 +22,8 @@ model Trip {
   tag          String          // "City", "Beach", "National Parks", etc.
   primaryColor String?         // e.g. "#004488"
   accentColor  String?         // e.g. "#d9534f"
-  
+  archivedAt   DateTime?       // hidden from the dashboard's main lists when set (PR 4)
+
   checklist    ChecklistItem[]
   logistics    LogisticsCard[]
   days         ItineraryDay[]

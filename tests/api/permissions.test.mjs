@@ -11,6 +11,7 @@ import { saveChecklistItem, deleteChecklistItem } from '../../src/lib/api/checkl
 import { toggleGroceryItem, createGroceryItem } from '../../src/lib/api/grocery.js';
 import { saveLogisticsCard, deleteLogisticsCard } from '../../src/lib/api/logistics.js';
 import { saveMeal } from '../../src/lib/api/meals.js';
+import { archiveTrip, createTrip, deleteTrip, updateDay, updateTrip } from '../../src/lib/api/trips.js';
 
 let db;
 let trip;
@@ -25,6 +26,11 @@ beforeEach(async () => {
 });
 
 const firstChecklist = () => trip.checklist[0].id;
+const key = (d) => new Date(d).toISOString().slice(0, 10);
+const tripForm = () => ({
+  id: trip.id, name: 'Renamed', tag: trip.tag, travelers: trip.travelers,
+  startDate: key(trip.startDate), endDate: key(trip.endDate),
+});
 
 // [name, handler, body(), lowest role allowed]
 const CASES = [
@@ -39,6 +45,11 @@ const CASES = [
   ['delete an activity', deleteActivity, () => ({ id: trip.days[0].activities[0].id }), 'admin'],
   ['save a logistics card', saveLogisticsCard, () => ({ tripId: trip.id, title: 'Car', content: 'Hertz' }), 'admin'],
   ['delete a logistics card', deleteLogisticsCard, () => ({ id: trip.logistics[0].id }), 'admin'],
+  ['create a trip', createTrip, () => ({ name: 'New Place', tag: 'City', travelers: 'Us', startDate: '2030-01-01', endDate: '2030-01-02' }), 'admin'],
+  ['edit a trip', updateTrip, tripForm, 'admin'],
+  ['archive a trip', archiveTrip, () => ({ id: trip.id, archived: true }), 'admin'],
+  ['delete a trip', deleteTrip, () => ({ id: trip.id, confirmName: trip.name }), 'admin'],
+  ['rename a day', updateDay, () => ({ id: trip.days[0].id, title: 'Arrival' }), 'admin'],
   ['plan a meal', saveMeal, () => ({ tripId: trip.id, dayNumber: 2, mealType: 'Lunch', mealName: 'Subs' }), 'admin'],
 ];
 

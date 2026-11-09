@@ -34,6 +34,9 @@ export function tripReducer(trip, action) {
     case 'logistics/remove':
       return { ...trip, logistics: trip.logistics.filter((c) => c.id !== action.id) };
 
+    case 'day/patch':
+      return { ...trip, days: patchById(trip.days, action.id, action.patch) };
+
     case 'activity/add':
       return {
         ...trip,

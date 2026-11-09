@@ -45,7 +45,7 @@ export default function TripDetailsClient({ initialTrip, initialTab, user }) {
   return (
     <TripProvider value={context}>
       <div data-hydrated={hydrated || undefined} hidden />
-      <EditModeBar {...permissions} editMode={editMode} onChange={setEditMode} />
+      <EditModeBar {...permissions} tripId={trip.id} editMode={editMode} onChange={setEditMode} />
       <TripTabs active={activeTab} onChange={changeTab} />
       <div role="tabpanel" id={panelId(activeTab)} aria-labelledby={tabId(activeTab)}>
         <Panel />

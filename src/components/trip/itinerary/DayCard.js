@@ -18,9 +18,22 @@ export default function DayCard({ day, isToday = false, nowMinutes = null }) {
   const confirm = useConfirm();
   const [editingId, setEditingId] = useState(null);
   const [adding, setAdding] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [titleDraft, setTitleDraft] = useState('');
 
   const timeline = useMemo(() => buildDayTimeline(day, trip.meals), [day, trip.meals]);
   const nextId = nowMinutes == null ? null : nextUpId(timeline, nowMinutes);
+
+  const saveTitle = async (e) => {
+    e.preventDefault();
+    try {
+      const data = await apiFetch('/api/days', { method: 'PATCH', body: { id: day.id, title: titleDraft } });
+      dispatch({ type: 'day/patch', id: day.id, patch: { title: data.day.title } });
+      setRenaming(false);
+    } catch (err) {
+      toast.error(`Couldn't rename the day: ${err.message}`);
+    }
+  };
 
   const saveEdit = async (id, values) => {
     try {
@@ -72,7 +85,44 @@ export default function DayCard({ day, isToday = false, nowMinutes = null }) {
           {day.title && <span className="itinerary-day-subtitle"> — {day.title}</span>}
         </h2>
         {isToday && <span className="today-badge">Today</span>}
+        {canEdit && !renaming && (
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            aria-label={`Rename ${day.dateLabel}`}
+            onClick={() => {
+              setTitleDraft(day.title ?? '');
+              setRenaming(true);
+            }}
+          >
+            Rename
+          </button>
+        )}
       </div>
+      {renaming && (
+        <form className={styles.dayTitleForm} onSubmit={saveTitle}>
+          <label className="form-label" htmlFor={`day-title-${day.id}`}>
+            Title for {day.dateLabel}
+          </label>
+          <input
+            id={`day-title-${day.id}`}
+            className="edit-input"
+            value={titleDraft}
+            onChange={(e) => setTitleDraft(e.target.value)}
+            maxLength={80}
+            placeholder="e.g. Beach day"
+            autoFocus
+          />
+          <div className="form-actions">
+            <button type="submit" className="btn btn-sm">
+              Save title
+            </button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setRenaming(false)}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
 
       <div className={styles.timeline}>
         {timeline.map((act) =>

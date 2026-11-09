@@ -45,6 +45,19 @@ describe('apiFetch', () => {
     });
   });
 
+  test('errors carry the response body (e.g. per-field errors)', async () => {
+    stubFetch(() => json(400, { success: false, message: 'Trip name is required.', errors: { name: 'Trip name is required.' } }));
+    const err = await apiFetch('/api/trips', { method: 'POST', body: {} }).catch((e) => e);
+    assert.ok(err instanceof ApiError);
+    assert.deepEqual(err.data.errors, { name: 'Trip name is required.' });
+  });
+
+  test('errors without a JSON body have null data', async () => {
+    stubFetch(() => new Response('oops', { status: 500 }));
+    const err = await apiFetch('/api/x').catch((e) => e);
+    assert.equal(err.data, null);
+  });
+
   test('treats success:false as an error even with a 200', async () => {
     stubFetch(() => json(200, { success: false, message: 'Nope' }));
     await assert.rejects(apiFetch('/x'), { name: 'ApiError', message: 'Nope', status: 200 });

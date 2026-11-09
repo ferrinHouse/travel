@@ -5,6 +5,8 @@ import { tripTheme } from '@/lib/color';
 import { tripPhase } from '@/lib/trip-status';
 import TripHero from '@/components/trips/TripHero';
 import TripDetailsClient from '@/components/trip/TripDetailsClient';
+import Link from 'next/link';
+import { can } from '@/lib/auth/roles';
 import { getCurrentUser, requirePageUser, clientUser } from '@/lib/auth/current-user';
 
 export const revalidate = 0; // Always render fresh so edits show immediately
@@ -57,6 +59,12 @@ export default async function TripDetailsPage({ params, searchParams }) {
     <div data-trip={trip.id} style={tripTheme(trip)}>
       <TripHero trip={trip} status={tripPhase(trip)} />
       <main className="container has-tabbar">
+        {trip.archivedAt && (
+          <p className="notice">
+            <span>🗄️ This trip is archived, so it&apos;s tucked away on the home page.</span>
+            {can(user, 'edit') && <Link href={`/trips/${trip.id}/edit`}>Restore it</Link>}
+          </p>
+        )}
         <TripDetailsClient initialTrip={clientTrip} initialTab={typeof tab === 'string' ? tab : undefined} user={clientUser(user)} />
       </main>
     </div>
