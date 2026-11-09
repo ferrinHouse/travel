@@ -47,3 +47,50 @@ test('entrypoint never accepts data loss or swallows push failures', () => {
   assert.ok(!/db push[^\n]*\|\|/.test(script), 'push failure must not be ignored');
   assert.match(script, /^set -e$/m);
 });
+
+// --- Deploy workflow: tests and image build run in parallel, but nothing
+// tagged `latest` (which the cluster pulls on every restart) exists until
+// both have passed.
+const ci = read('.github', 'workflows', 'ci.yml');
+
+/** Text of one top-level job in ci.yml (lines indented under `  <name>:`). */
+function job(name) {
+  const lines = ci.split('\n');
+  const start = lines.findIndex((l) => l === `  ${name}:`);
+  assert.ok(start >= 0, `job ${name} missing`);
+  const body = [];
+  for (const line of lines.slice(start + 1)) {
+    if (/^ {2}\S/.test(line) || /^\S/.test(line)) break;
+    body.push(line);
+  }
+  return body.join('\n');
+}
+
+const needs = (name) => {
+  const m = job(name).match(/^ {4}needs:\s*(.+)$/m);
+  return m ? m[1].replace(/[[\]\s]/g, '').split(',').filter(Boolean).sort() : [];
+};
+
+test('image build runs alongside the tests, not after them', () => {
+  assert.deepEqual(needs('build-image'), []);
+  assert.match(job('test'), /uses: \.\/\.github\/workflows\/test\.yml/);
+});
+
+test('the build pushes only an immutable per-commit tag, never latest', () => {
+  const build = job('build-image');
+  assert.match(build, /travel-site:sha-\$\{\{ github\.sha \}\}/);
+  assert.ok(!/travel-site:latest/.test(build), 'build-image must not push :latest');
+});
+
+test('latest is promoted only after both tests and build pass', () => {
+  assert.deepEqual(needs('promote'), ['build-image', 'test']);
+  const promote = job('promote');
+  assert.match(promote, /imagetools create/);
+  assert.match(promote, /travel-site:latest/);
+  assert.match(promote, /travel-site:sha-\$\{\{ github\.sha \}\}/);
+});
+
+test('deploy waits for the promoted image', () => {
+  assert.deepEqual(needs('deploy'), ['promote']);
+  assert.match(deployment, /image: ghcr\.io\/ferrinhouse\/travel-site:latest/);
+});
