@@ -50,9 +50,9 @@ describe('apiFetch', () => {
     await assert.rejects(apiFetch('/x'), { name: 'ApiError', message: 'Nope', status: 200 });
   });
 
-  test('401 without a message explains edit mode', async () => {
+  test('401 without a message asks you to sign in again', async () => {
     stubFetch(() => new Response('', { status: 401 }));
-    await assert.rejects(apiFetch('/x'), { status: 401, message: /unlock editing/ });
+    await assert.rejects(apiFetch('/x'), { status: 401, message: /sign in again/ });
   });
 
   test('non-JSON error bodies get a generic message with the status', async () => {

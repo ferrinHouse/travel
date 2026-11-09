@@ -19,16 +19,6 @@
   color: var(--success);
 }
 
-.centerActions {
-  justify-content: center;
-}
-
-.lockHint {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  margin: 0 0 20px 0;
-}
-
 /* Itinerary */
 .dayCard {
   margin-bottom: 24px;

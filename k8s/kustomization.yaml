@@ -8,3 +8,10 @@ resources:
 
 patches:
   - path: patches/nfs-server.yaml
+
+configMapGenerator:
+  - name: travel-config
+    literals:
+      # Public address of the site behind the reverse proxy (no trailing slash).
+      # Passkeys are bound to this hostname, so changing it later invalidates them.
+      - APP_ORIGIN=https://travel.ferrinhouse.org

@@ -4,13 +4,13 @@ import { createTestDb } from '../support/test-db.mjs';
 import { seedTrip } from '../support/fixtures.mjs';
 import { saveMeal } from '../../src/lib/api/meals.js';
 import { checkHealth } from '../../src/lib/api/health.js';
+import { actor } from '../support/users.mjs';
 import { runHandler } from '../../src/lib/api/run.js';
-import { verifyPasscode } from '../../src/lib/auth/passcode.js';
 
 let db;
 let trip;
-const admin = (body) => ({ db: db.prisma, isAdmin: true, body });
-const guest = (body) => ({ db: db.prisma, isAdmin: false, body });
+const admin = (body) => ({ db: db.prisma, user: actor('admin'), body });
+const guest = (body) => ({ db: db.prisma, user: null, body });
 const mealsOn = (dayNumber) =>
   db.prisma.mealPlan.findMany({ where: { tripId: trip.id, dayNumber }, orderBy: { id: 'asc' } });
 
@@ -104,24 +104,3 @@ describe('runHandler', () => {
   });
 });
 
-describe('verifyPasscode', () => {
-  test('accepts only the exact configured passcode', () => {
-    assert.equal(verifyPasscode('open-sesame', 'open-sesame'), true);
-    assert.equal(verifyPasscode('open-sesame ', 'open-sesame'), false);
-    assert.equal(verifyPasscode('OPEN-SESAME', 'open-sesame'), false);
-    assert.equal(verifyPasscode('', 'open-sesame'), false);
-  });
-
-  test('refuses everything when no passcode is configured (no default)', () => {
-    for (const configured of [undefined, null, '']) {
-      assert.equal(verifyPasscode('admin', configured), false);
-      assert.equal(verifyPasscode('', configured), false);
-    }
-  });
-
-  test('rejects non-string input', () => {
-    assert.equal(verifyPasscode(undefined, 'x'), false);
-    assert.equal(verifyPasscode(123, '123'), false);
-    assert.equal(verifyPasscode(['x'], 'x'), false);
-  });
-});

@@ -88,3 +88,69 @@ model GroceryItem {
   category String  // "Breakfast", "Packed Lunches", "Tacos", etc.
   isBought Boolean @default(false)
 }
+
+// ---- Accounts (PR 3). New tables only, so `db push` never touches trip data. ----
+
+model User {
+  id             Int       @id @default(autoincrement())
+  username       String    @unique // lowercase, see src/lib/auth/validate.js
+  displayName    String
+  role           String    @default("viewer") // "viewer" | "member" | "admin"
+  passwordHash   String? // scrypt$N$r$p$salt$hash; null until an invite is accepted
+  webauthnUserId String?   @unique // random base64url handle given to authenticators
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  lastLoginAt    DateTime?
+  sessions       Session[]
+  passkeys       Passkey[]
+  invites        Invite[]
+}
+
+model Session {
+  id         String   @id // sha256 of the cookie token; the token itself is never stored
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+  lastSeenAt DateTime @default(now())
+  userAgent  String?
+
+  @@index([userId])
+}
+
+model Passkey {
+  id         String    @id // credential ID (base64url)
+  userId     Int
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  publicKey  Bytes
+  counter    BigInt    @default(0) // WebAuthn sign counter is uint32
+  transports String? // JSON array
+  deviceType String? // "singleDevice" | "multiDevice"
+  backedUp   Boolean   @default(false)
+  name       String
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+
+  @@index([userId])
+}
+
+model Invite {
+  id          String    @id // sha256 of the link token
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purpose     String // "invite" | "reset"
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdById Int?
+
+  @@index([userId])
+}
+
+model AuthChallenge {
+  id        String   @id // random handle returned to the browser
+  challenge String
+  purpose   String // "register" | "login"
+  userId    Int?
+  expiresAt DateTime
+}

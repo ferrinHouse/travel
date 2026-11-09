@@ -3,6 +3,7 @@ import { tripPhase } from '@/lib/trip-status';
 import EmptyState from '@/components/ui/EmptyState';
 import TripCard from '@/components/trips/TripCard';
 import FeaturedTrip from '@/components/trips/FeaturedTrip';
+import { requirePageUser } from '@/lib/auth/current-user';
 
 export const revalidate = 0; // Always render fresh so edits show immediately
 
@@ -18,6 +19,7 @@ async function getTrips() {
 const time = (value) => (value ? new Date(value).getTime() : Infinity);
 
 export default async function DashboardPage() {
+  await requirePageUser('/');
   const today = new Date();
   const trips = (await getTrips()).map((trip) => ({ trip, status: tripPhase(trip, today) }));
 

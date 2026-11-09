@@ -8,7 +8,7 @@ import { useTrip } from '../TripContext';
 import styles from '../trip.module.css';
 
 export default function GroceryList() {
-  const { trip, dispatch, canEdit } = useTrip();
+  const { trip, dispatch, canAdd, canToggle } = useTrip();
   const toast = useToast();
   const [form, setForm] = useState({ name: '', category: GROCERY_BASE[0] });
   const [adding, setAdding] = useState(false);
@@ -51,7 +51,7 @@ export default function GroceryList() {
       <h2 className={styles.sectionHeading}>🛒 Master Grocery Shopping List</h2>
 
       {categories.length === 0 ? (
-        <p className={styles.emptyNote}>No groceries yet.{canEdit && ' Add an item below!'}</p>
+        <p className={styles.emptyNote}>No groceries yet.{canAdd && ' Add an item below!'}</p>
       ) : (
         categories.map((category) => (
           <div key={category} className="grocery-category">
@@ -66,6 +66,7 @@ export default function GroceryList() {
                     className="checkbox-custom"
                     checked={item.isBought}
                     onChange={() => toggle(item)}
+                    disabled={!canToggle}
                   />
                   <label
                     htmlFor={`${id}-${item.id}`}
@@ -79,7 +80,7 @@ export default function GroceryList() {
         ))
       )}
 
-      {canEdit && (
+      {canAdd && (
         <form onSubmit={add} className={styles.groceryForm}>
           <h4>Add Custom Grocery Item</h4>
           <div className={styles.groceryInputs}>

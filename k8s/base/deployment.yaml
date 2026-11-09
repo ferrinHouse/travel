@@ -40,11 +40,21 @@ spec:
             # Trip dates are family-local; decide "past"/"today" in Central time.
             - name: TZ
               value: "America/Chicago"
-            - name: ADMIN_PASSCODE
+            # The site's public https address: WebAuthn origin, cookie Secure flag
+            # and the cross-site write check. Set in k8s/kustomization.yaml.
+            - name: APP_ORIGIN
+              valueFrom:
+                configMapKeyRef:
+                  name: travel-config
+                  key: APP_ORIGIN
+            # Only needed once, to create the first admin at /setup. Remove the key
+            # from travel-secrets afterwards; /setup 404s once any user exists.
+            - name: SETUP_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: travel-secrets
-                  key: ADMIN_PASSCODE
+                  key: SETUP_TOKEN
+                  optional: true
           startupProbe:
             httpGet:
               path: /api/health

@@ -32,7 +32,7 @@ export async function apiFetch(url, { method = 'GET', body } = {}) {
 
   if (!res.ok || !data || data.success === false) {
     const fallback =
-      res.status === 401 ? 'You need to unlock editing to do that.' : `Request failed (${res.status}).`;
+      res.status === 401 ? 'Your sign-in has expired. Please sign in again.' : `Request failed (${res.status}).`;
     throw new ApiError(data?.message || fallback, res.status);
   }
   return data;

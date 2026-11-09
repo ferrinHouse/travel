@@ -1,16 +1,19 @@
-import { badRequest, isId, isObject, notFound, ok, text, tripExists, unauthorized } from './run.js';
+import { badRequest, isId, isObject, notFound, ok, text, tripExists } from './run.js';
+import { deny } from './guard.js';
 
 /**
  * POST /api/checklist does three things:
- *  - no `id`: create an item (admin)
- *  - `isCompleted`: tick/untick (anyone)
+ *  - no `id`: create an item (member)
+ *  - `isCompleted`: tick/untick (member)
  *  - `text`: rename (admin)
  */
-export async function saveChecklistItem({ db, isAdmin, body }) {
-  if (!isObject(body)) return badRequest();
+export async function saveChecklistItem(ctx) {
+  const { db, body } = ctx;
+  if (!isObject(body)) return deny(ctx, 'toggle') ?? badRequest();
 
   if (body.id === undefined) {
-    if (!isAdmin) return unauthorized();
+    const denied = deny(ctx, 'add-item');
+    if (denied) return denied;
     const itemText = text(body.text);
     const category = text(body.category);
     if (!itemText || !category) return badRequest('Text and category are required');
@@ -21,11 +24,12 @@ export async function saveChecklistItem({ db, isAdmin, body }) {
     return ok({ item });
   }
 
+  const denied = deny(ctx, body.text !== undefined ? 'edit' : 'toggle');
+  if (denied) return denied;
   if (!isId(body.id)) return badRequest();
 
   const data = {};
   if (body.text !== undefined) {
-    if (!isAdmin) return unauthorized();
     data.text = text(body.text);
     if (!data.text) return badRequest('Text is required');
   }
@@ -39,8 +43,10 @@ export async function saveChecklistItem({ db, isAdmin, body }) {
   return ok({ item });
 }
 
-export async function deleteChecklistItem({ db, isAdmin, body }) {
-  if (!isAdmin) return unauthorized();
+export async function deleteChecklistItem(ctx) {
+  const denied = deny(ctx, 'edit');
+  if (denied) return denied;
+  const { db, body } = ctx;
   if (!isObject(body) || !isId(body.id)) return badRequest();
   await db.checklistItem.delete({ where: { id: body.id } });
   return ok();

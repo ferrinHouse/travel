@@ -1,8 +1,8 @@
-// Browser tests for viewing: dashboard, navigation, tabs, view-only mode,
-// open checkbox toggling, error pages and mobile layout.
+// Browser tests for viewing: dashboard, navigation, tabs, what each role sees,
+// member checkbox toggling, error pages and mobile layout.
 import { describe, test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { startApp } from './support/server.mjs';
+import { newContext, startApp } from './support/server.mjs';
 import { fitsWidth, openTrip, toastText } from './support/trip-page.mjs';
 
 let app;
@@ -18,7 +18,7 @@ after(() => app?.stop());
 
 describe('dashboard', () => {
   test('groups trips into upcoming and past and links to them', async () => {
-    const context = await app.browser.newContext();
+    const context = await newContext(app);
     const page = await context.newPage();
     await page.goto(app.baseURL);
 
@@ -42,7 +42,7 @@ describe('dashboard', () => {
         startDate: daysFromToday(-2), endDate: daysFromToday(0),
       },
     });
-    const context = await app.browser.newContext({ timezoneId: 'America/Chicago' });
+    const context = await newContext(app, { timezoneId: 'America/Chicago' });
     const page = await context.newPage();
     await page.goto(app.baseURL);
     const upcoming = page.locator('section', { has: page.getByRole('heading', { name: 'Upcoming Trips' }) });
@@ -54,7 +54,7 @@ describe('dashboard', () => {
 
 describe('not found pages', () => {
   test('unknown trip shows the trip-not-found page with a 404', async () => {
-    const context = await app.browser.newContext();
+    const context = await newContext(app);
     const page = await context.newPage();
     const res = await page.goto(`${app.baseURL}/trips/atlantis`);
     assert.equal(res.status(), 404);
@@ -65,7 +65,7 @@ describe('not found pages', () => {
   });
 
   test('unknown route shows the page-not-found page', async () => {
-    const context = await app.browser.newContext();
+    const context = await newContext(app);
     const page = await context.newPage();
     const res = await page.goto(`${app.baseURL}/no/such/page`);
     assert.equal(res.status(), 404);
@@ -76,8 +76,9 @@ describe('not found pages', () => {
 
 describe('trip page, view-only', () => {
   test('shows itinerary with meals interleaved and no edit controls', async () => {
-    const { page, context, errors } = await openTrip(app);
-    assert.equal(await page.getByText('VIEW ONLY MODE').count(), 1);
+    const { page, context, errors } = await openTrip(app, { as: 'viewer' });
+    assert.equal(await page.getByText(/View only/).count(), 1);
+    assert.equal(await page.getByRole('button', { name: 'Edit mode' }).count(), 0);
     assert.equal(await page.getByRole('button', { name: 'Edit', exact: true }).count(), 0);
     assert.equal(await page.getByRole('button', { name: 'Delete', exact: true }).count(), 0);
     assert.equal(await page.getByRole('button', { name: '+ Add Activity' }).count(), 0);
@@ -128,15 +129,47 @@ describe('trip page, view-only', () => {
     await context.close();
   });
 
-  test('grocery add form is hidden when not editing', async () => {
-    const { page, context } = await openTrip(app, { tab: 'meals' });
+  test('viewers get no grocery add form and see unplanned meals as text', async () => {
+    const { page, context } = await openTrip(app, { tab: 'meals', as: 'viewer' });
     assert.equal(await page.getByText('Add Custom Grocery Item').count(), 0);
     assert.equal(await page.getByText('Not planned').count() > 0, true);
     await context.close();
   });
 });
 
-describe('open checkbox toggling', () => {
+describe('what each role sees', () => {
+  test('viewers see locked checkboxes and no add forms', async () => {
+    const { page, context } = await openTrip(app, { tab: 'checklist', as: 'viewer' });
+    assert.equal(await page.getByRole('checkbox', { name: 'Sunscreen' }).isDisabled(), true);
+    assert.equal(await page.getByPlaceholder('Add new item...').count(), 0);
+    await page.getByRole('tab', { name: /Meals/ }).click();
+    assert.equal(await page.getByRole('checkbox', { name: 'Milk' }).isDisabled(), true);
+    assert.equal(await page.getByLabel('Grocery item name').count(), 0);
+    await context.close();
+  });
+
+  test('members can add packing and grocery items but not edit or delete', async () => {
+    const { page, context } = await openTrip(app, { tab: 'checklist' });
+    assert.equal(await page.getByRole('button', { name: 'Edit mode' }).count(), 0);
+    assert.equal(await page.getByRole('button', { name: /^Delete “/ }).count(), 0);
+    const packing = page.locator('.card', { has: page.getByRole('heading', { name: /Packing/ }) });
+    await packing.getByPlaceholder('Add new item...').fill('Rain jackets');
+    const saved = page.waitForResponse('**/api/checklist');
+    await packing.getByRole('button', { name: 'Add' }).click();
+    assert.equal((await saved).status(), 200);
+    await page.getByText('Rain jackets').waitFor();
+
+    await page.getByRole('tab', { name: /Meals/ }).click();
+    await page.getByLabel('Grocery item name').fill('Marshmallows');
+    const added = page.waitForResponse('**/api/grocery');
+    await page.getByRole('button', { name: 'Add', exact: true }).click();
+    assert.equal((await added).status(), 200);
+    await page.getByText('Marshmallows').waitFor();
+    await context.close();
+  });
+});
+
+describe('member checkbox toggling', () => {
   test('ticking a checklist item saves and survives a reload', async () => {
     const { page, context } = await openTrip(app, { tab: 'checklist' });
     const box = page.getByRole('checkbox', { name: 'Transit app' });
@@ -199,7 +232,7 @@ describe('mobile layout (375px)', () => {
   });
 
   test('dashboard fits on a phone', async () => {
-    const context = await app.browser.newContext({ viewport: { width: 375, height: 812 } });
+    const context = await newContext(app, { viewport: { width: 375, height: 812 } });
     const page = await context.newPage();
     await page.goto(app.baseURL);
     assert.ok(await fitsWidth(page));

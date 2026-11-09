@@ -1,14 +1,20 @@
-import { badRequest, isId, isObject, notFound, ok, text, tripExists, unauthorized } from './run.js';
+import { badRequest, isId, isObject, notFound, ok, text, tripExists } from './run.js';
+import { deny } from './guard.js';
 
-/** Anyone can mark items bought; no login needed while shopping. */
-export async function toggleGroceryItem({ db, body }) {
+/** Members and admins mark items bought while shopping. */
+export async function toggleGroceryItem(ctx) {
+  const denied = deny(ctx, 'toggle');
+  if (denied) return denied;
+  const { db, body } = ctx;
   if (!isObject(body) || !isId(body.id) || typeof body.isBought !== 'boolean') return badRequest();
   const item = await db.groceryItem.update({ where: { id: body.id }, data: { isBought: body.isBought } });
   return ok({ item });
 }
 
-export async function createGroceryItem({ db, isAdmin, body }) {
-  if (!isAdmin) return unauthorized();
+export async function createGroceryItem(ctx) {
+  const denied = deny(ctx, 'add-item');
+  if (denied) return denied;
+  const { db, body } = ctx;
   if (!isObject(body)) return badRequest();
   const name = text(body.name);
   const category = text(body.category);

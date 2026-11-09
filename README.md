@@ -25,17 +25,19 @@ A modern, responsive travel companion and itinerary management web application b
 
 - **Collaborative Packing & Pre-Trip Checklists**:
   - Categorized task lists: **Pre-Trip To-Do**, **Packing List**, and **Travel Apps**.
-  - Open checkbox toggling: family members can check off items on the go without logging in.
-  - Admin controls for adding, modifying, or deleting items.
+  - Members can check off items and add new ones from their phones.
+  - Admins rename and delete items.
 
 - **Meal Planner & Master Grocery Shopping List**:
   - Day-by-day breakfast, lunch, and dinner scheduling with optional specific times.
   - Automatically sorts meals directly into each day's timeline.
   - Master grocery shopping checklist categorized by meal, store, or section (e.g., Trader Joe's, Costco, Taco Bar, Essentials).
 
-- **Role-Based Admin Access Control**:
-  - **Public Mode (Default)**: View itineraries, logistics, meals, and check off packing/grocery items.
-  - **Admin Edit Mode (Passcode-protected)**: Unlock full CRUD capabilities to add, edit, or remove itinerary activities, logistics cards, checklist items, and meal plans. Session maintained via secure HTTP-only cookies.
+- **Family Accounts**:
+  - Everyone signs in with their own username and a password or a **passkey** (Face ID, Touch ID, Windows Hello, Android screen lock). Nothing is visible without signing in.
+  - **Viewer** sees everything; **Member** also ticks off and adds packing and grocery items; **Admin** plans trips (behind an "Edit mode" switch) and manages people.
+  - Admins add people at **People** (`/admin/users`) and text them a one-time invite link; forgotten passwords get a one-time reset link the same way.
+  - **Your account** (`/account`) manages passkeys, password and signed-in devices.
 
 ---
 
@@ -80,7 +82,9 @@ travel/
 │   ├── app/
 │   │   ├── api/                 # Next.js Route Handlers (REST endpoints)
 │   │   │   ├── activities/      # Itinerary activity CRUD
-│   │   │   ├── auth/            # Admin passcode login/session verification
+│   │   │   ├── auth/            # Sign in/out, first-run setup, invites, passkey sign-in
+│   │   │   ├── account/         # Own password, passkeys and sessions
+│   │   │   ├── users/           # Admin user management
 │   │   │   ├── checklist/       # Packing & pre-trip checklist items
 │   │   │   ├── grocery/         # Master grocery items
 │   │   │   ├── logistics/       # Logistics info cards
@@ -129,6 +133,7 @@ Defined in [`prisma/schema.prisma`](prisma/schema.prisma):
 - **`ChecklistItem`**: Shared tasks and packing requirements (`text`, `category`, `isCompleted`).
 - **`LogisticsCard`**: Markdown travel details and confirmations (`title`, `content`, `order`).
 - **`GroceryItem`**: Master shopping checklist (`name`, `category`, `isBought`).
+- **`User`**, **`Session`**, **`Passkey`**, **`Invite`**, **`AuthChallenge`**: accounts and sign-in. Session and invite rows store only a SHA-256 of the cookie/link token; passwords are scrypt hashes.
 
 ---
 
@@ -153,8 +158,21 @@ Create a `.env` file in the root directory:
 
 ```env
 DATABASE_URL="file:./dev.db"
-ADMIN_PASSCODE="your_admin_passcode_here"
+# One-time code for creating the first admin at /setup (any random string).
+SETUP_TOKEN="make-up-a-long-random-string"
+# Optional locally (defaults to the request's own address); required in production.
+# APP_ORIGIN="http://localhost:3000"
 ```
+
+Then open `/setup`, enter the setup code and create your admin account. `/setup` disappears as soon as one user exists. From there, add everyone else at **People**.
+
+| Variable | Needed | Purpose |
+|---|---|---|
+| `DATABASE_URL` | Yes | SQLite file |
+| `SETUP_TOKEN` | First run only | Code required by `/setup` to create the first admin |
+| `APP_ORIGIN` | Production | Public `https://` address: passkey origin, `Secure` cookies and the cross-site write check |
+| `WEBAUTHN_RP_ID` | No | Passkey domain; defaults to `APP_ORIGIN`'s hostname |
+| `WEBAUTHN_RP_NAME` | No | Name shown in passkey prompts (default "Family Travel Adventures") |
 
 ### 3. Initialize & Seed Database
 
@@ -205,22 +223,31 @@ npm run lint
 
 All API routes are located in `src/app/api/`:
 
-| Method | Endpoint | Auth Required | Description |
+Handlers live in `src/lib/api/` and check permissions with `deny(ctx, action)`: no session is `401`, a role that is too low is `403`. Writes with a foreign `Origin` header are rejected with `403`.
+
+| Method | Endpoint | Who | Description |
 |---|---|---|---|
-| `POST` | `/api/auth` | No | Submit admin passcode; sets `admin_authenticated` HTTP-only cookie |
-| `GET` | `/api/auth` | No | Check if the current session has admin privileges |
-| `GET` | `/api/health` | No | Health probe (checks the database connection) |
-| `DELETE` | `/api/auth` | No | Clear admin session cookie (lock edit mode) |
-| `POST` | `/api/activities` | **Yes** | Update activity details, time, or alert status |
-| `PUT` | `/api/activities` | **Yes** | Create a new activity for a trip day |
-| `DELETE` | `/api/activities` | **Yes** | Delete an activity |
-| `POST` | `/api/checklist` | *Conditional* | Toggle status (Open); create item or update text (**Yes**) |
-| `DELETE` | `/api/checklist` | **Yes** | Delete a checklist item |
-| `POST` | `/api/grocery` | No | Toggle `isBought` status of a grocery item |
-| `PUT` | `/api/grocery` | **Yes** | Add a new custom grocery item |
-| `POST` | `/api/logistics` | **Yes** | Create or update a logistics card |
-| `DELETE` | `/api/logistics` | **Yes** | Delete a logistics card |
-| `POST` | `/api/meals` | **Yes** | Upsert a meal plan record for a given day and meal type |
+| `GET` | `/api/health` | Anyone | Health probe (checks the database connection) |
+| `POST` | `/api/auth/login` | Anyone | Username + password; sets the `travel_session` cookie (rate limited) |
+| `POST` | `/api/auth/logout` | Anyone | Ends this session |
+| `GET` | `/api/auth/me` | Anyone | The signed-in user, or `null` |
+| `GET`/`POST` | `/api/auth/setup` | Anyone | First-run status / create the first admin (needs `SETUP_TOKEN`, zero users) |
+| `GET`/`POST` | `/api/auth/invite` | Link holder | Describe / accept an invite or reset link (sets a password, signs in) |
+| `POST` | `/api/auth/passkey/options`, `/verify` | Anyone | Passkey sign-in challenge and answer |
+| `POST` | `/api/account/password` | Signed in | Change or add a password (signs out other devices) |
+| `GET`/`DELETE` | `/api/account/sessions` | Signed in | List / sign out own devices |
+| `GET`/`PATCH`/`DELETE` | `/api/account/passkeys` | Signed in | List / rename / remove own passkeys |
+| `POST` | `/api/account/passkeys/options`, `/verify` | Signed in | Add a passkey |
+| `GET`/`POST`/`PATCH` | `/api/users` | Admin | List / add (returns invite link token) / change role, name or on-off |
+| `POST` | `/api/users/link` | Admin | New one-time invite or reset link |
+| `DELETE` | `/api/users/sessions` | Admin | Sign someone out everywhere |
+| `POST` | `/api/checklist` | Member | Tick an item, or add one; renaming needs Admin |
+| `DELETE` | `/api/checklist` | Admin | Delete a checklist item |
+| `POST` | `/api/grocery` | Member | Tick a grocery item |
+| `PUT` | `/api/grocery` | Member | Add a grocery item |
+| `POST`/`PUT`/`DELETE` | `/api/activities` | Admin | Update / create / delete an activity |
+| `POST`/`DELETE` | `/api/logistics` | Admin | Save / delete a logistics card |
+| `POST` | `/api/meals` | Admin | Upsert a meal plan record for a given day and meal type |
 
 ---
 
@@ -237,7 +264,7 @@ docker build -t travel-site:latest .
 # Run container locally
 docker run -p 3000:3000 \
   -e DATABASE_URL="file:/app/database/travel.db" \
-  -e ADMIN_PASSCODE="your_passcode" \
+  -e APP_ORIGIN="http://localhost:3000"   -e SETUP_TOKEN="make-up-a-long-random-string" \
   -v $(pwd)/database:/app/database \
   travel-site:latest
 ```
@@ -250,7 +277,15 @@ Production deployment runs on a self-hosted Kubernetes cluster:
 
 - **Storage**: PersistentVolume and PVC (`travel-site-pvc`) mounted to `/app/database`, backed by an NFS export (`192.168.1.253:/export/travel-db`).
 - **Service**: NodePort service exposing the app on port `30090`.
-- **Secret**: `travel-secrets` providing `ADMIN_PASSCODE`.
+- **Config**: `APP_ORIGIN` is set by the `travel-config` ConfigMap generated in [`k8s/kustomization.yaml`](k8s/kustomization.yaml). Passkeys are tied to that hostname.
+- **Secret**: `travel-secrets` may hold `SETUP_TOKEN` (optional). Add it for the first deploy, create the admin at `/setup`, then remove it.
+
+**Locked out?** Every admin forgot their password and lost their passkeys? Print a one-time reset link from inside the pod:
+
+```bash
+kubectl exec deploy/travel-site-deployment -- node scripts/admin-reset.mjs <username>
+kubectl exec deploy/travel-site-deployment -- node scripts/admin-reset.mjs <username> --make-admin   # also promote + turn back on
+```
 
 Deploy manually using Kustomize:
 
@@ -274,12 +309,8 @@ Rolling back is a re-tag of an earlier build: `docker buildx imagetools create -
 
 The following features and architectural enhancements are planned for upcoming releases:
 
-### 1. 🔐 Robust Authentication (Scoped for Updates)
-- **Current State**: A single shared passcode stored in environment variables (`ADMIN_PASSCODE`) unlocks edit mode via an HTTP-only session cookie.
-- **Planned Improvements**:
-  - **Targeted Protection for Mutations**: Implement a modern, robust authentication provider (e.g., Auth.js / NextAuth, OAuth with Google/GitHub, or WebAuthn/Passkeys) strictly enforcing authorization on mutating endpoints (`POST`, `PUT`, `DELETE`).
-  - **Friction-Free Public Viewing**: Maintain completely unauthenticated, instant-load read access for itineraries and logistics, as well as friction-free checkbox toggling for packing and grocery items so family members can check off tasks on mobile without needing credentials.
-  - **Session Security & Auditability**: Move away from a single static passcode toward individual user credentials, audit logging for edits, and rate-limiting on sensitive API routes.
+### 1. 🔐 Authentication
+- Done: per-person accounts with passwords and passkeys, Viewer/Member/Admin roles, invite and reset links. Still open: an audit log of edits.
 
 ### 2. ➕ Dynamic Trip Creation & Management (UI & API)
 - **Current State**: New trips are currently added via database seeding scripts (`prisma/seed.js`) or direct database insertions.

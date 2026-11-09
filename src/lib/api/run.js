@@ -1,5 +1,5 @@
 /**
- * Framework-free API handlers. Each handler takes `{ db, isAdmin, body }` and
+ * Framework-free API handlers. Each handler takes `{ db, user, body, ... }` and
  * returns `{ status, body }`; route.js files adapt that to NextResponse (see
  * next-adapter.js). Keeping handlers free of Next imports lets `node --test`
  * run them against a real SQLite database.
@@ -10,7 +10,9 @@ export const ok = (data = {}) => ({ status: 200, body: { success: true, ...data 
 export const fail = (status, message) => ({ status, body: { success: false, message } });
 
 export const badRequest = (message = 'Invalid input') => fail(400, message);
-export const unauthorized = () => fail(401, 'Unauthorized');
+export const unauthorized = () => fail(401, 'Please sign in.');
+export const forbidden = () => fail(403, "You don't have permission to do that.");
+export const conflict = (message) => fail(409, message);
 export const notFound = (message = 'Not found') => fail(404, message);
 
 // Prisma: P2025 = record to update/delete not found, P2003 = foreign key failed.

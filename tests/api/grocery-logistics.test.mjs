@@ -4,12 +4,14 @@ import { createTestDb } from '../support/test-db.mjs';
 import { seedTrip } from '../support/fixtures.mjs';
 import { toggleGroceryItem, createGroceryItem } from '../../src/lib/api/grocery.js';
 import { saveLogisticsCard, deleteLogisticsCard } from '../../src/lib/api/logistics.js';
+import { actor } from '../support/users.mjs';
 import { runHandler } from '../../src/lib/api/run.js';
 
 let db;
 let trip;
-const admin = (body) => ({ db: db.prisma, isAdmin: true, body });
-const guest = (body) => ({ db: db.prisma, isAdmin: false, body });
+const admin = (body) => ({ db: db.prisma, user: actor('admin'), body });
+const guest = (body) => ({ db: db.prisma, user: null, body });
+const member = (body) => ({ db: db.prisma, user: actor('member'), body });
 
 before(async () => {
   db = await createTestDb();
@@ -21,21 +23,21 @@ beforeEach(async () => {
 });
 
 describe('toggleGroceryItem', () => {
-  test('anyone can mark an item bought and unbought', async () => {
+  test('members can mark an item bought and unbought', async () => {
     const milk = trip.groceries.find((g) => g.name === 'Milk');
-    let res = await runHandler(toggleGroceryItem, guest({ id: milk.id, isBought: true }));
+    let res = await runHandler(toggleGroceryItem, member({ id: milk.id, isBought: true }));
     assert.equal(res.status, 200);
     assert.equal(res.body.item.isBought, true);
-    res = await runHandler(toggleGroceryItem, guest({ id: milk.id, isBought: false }));
+    res = await runHandler(toggleGroceryItem, member({ id: milk.id, isBought: false }));
     assert.equal(res.body.item.isBought, false);
   });
 
   test('validates input and 404s unknown items', async () => {
     const milk = trip.groceries.find((g) => g.name === 'Milk');
-    assert.equal((await runHandler(toggleGroceryItem, guest({ id: milk.id }))).status, 400);
-    assert.equal((await runHandler(toggleGroceryItem, guest({ id: milk.id, isBought: 1 }))).status, 400);
-    assert.equal((await runHandler(toggleGroceryItem, guest(null))).status, 400);
-    assert.equal((await runHandler(toggleGroceryItem, guest({ id: 999999, isBought: true }))).status, 404);
+    assert.equal((await runHandler(toggleGroceryItem, member({ id: milk.id }))).status, 400);
+    assert.equal((await runHandler(toggleGroceryItem, member({ id: milk.id, isBought: 1 }))).status, 400);
+    assert.equal((await runHandler(toggleGroceryItem, member(null))).status, 400);
+    assert.equal((await runHandler(toggleGroceryItem, member({ id: 999999, isBought: true }))).status, 404);
   });
 });
 

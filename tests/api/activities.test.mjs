@@ -3,12 +3,13 @@ import assert from 'node:assert/strict';
 import { createTestDb } from '../support/test-db.mjs';
 import { seedTrip } from '../support/fixtures.mjs';
 import { createActivity, updateActivity, deleteActivity } from '../../src/lib/api/activities.js';
+import { actor } from '../support/users.mjs';
 import { runHandler } from '../../src/lib/api/run.js';
 
 let db;
 let trip;
-const admin = (body) => ({ db: db.prisma, isAdmin: true, body });
-const guest = (body) => ({ db: db.prisma, isAdmin: false, body });
+const admin = (body) => ({ db: db.prisma, user: actor('admin'), body });
+const guest = (body) => ({ db: db.prisma, user: null, body });
 
 before(async () => {
   db = await createTestDb();

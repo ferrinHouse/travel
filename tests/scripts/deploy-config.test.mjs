@@ -48,6 +48,36 @@ test('entrypoint never accepts data loss or swallows push failures', () => {
   assert.match(script, /^set -e$/m);
 });
 
+// ---- per-user auth (PR 3) ----
+
+const kustomization = read('k8s', 'kustomization.yaml');
+
+test('the shared admin passcode is gone', () => {
+  assert.ok(!deployment.includes('ADMIN_PASSCODE'));
+});
+
+test('SETUP_TOKEN comes from travel-secrets and is optional (only needed for first run)', () => {
+  const block = deployment.slice(deployment.indexOf('name: SETUP_TOKEN'), deployment.indexOf('name: SETUP_TOKEN') + 200);
+  assert.match(block, /secretKeyRef:\s*\n\s*name: travel-secrets\s*\n\s*key: SETUP_TOKEN\s*\n\s*optional: true/);
+});
+
+test('APP_ORIGIN comes from the travel-config ConfigMap', () => {
+  assert.match(deployment, /name: APP_ORIGIN\s*\n\s*valueFrom:\s*\n\s*configMapKeyRef:\s*\n\s*name: travel-config\s*\n\s*key: APP_ORIGIN/);
+});
+
+test('APP_ORIGIN is the real https site address (WebAuthn and the CSRF check depend on it)', () => {
+  const value = kustomization.match(/-\s*APP_ORIGIN=(\S+)/)?.[1];
+  assert.ok(value, 'configMapGenerator literal APP_ORIGIN=… missing');
+  const url = new URL(value);
+  assert.equal(url.protocol, 'https:');
+  assert.equal(url.origin, value, 'no path or trailing slash');
+  assert.ok(!/example\.|change-?me|localhost/i.test(url.hostname), `placeholder hostname: ${url.hostname}`);
+});
+
+test('the image ships the lockout recovery script', () => {
+  assert.match(read('Dockerfile'), /COPY .*scripts\/admin-reset\.mjs/);
+});
+
 // --- Deploy workflow: tests and image build run in parallel, but nothing
 // tagged `latest` (which the cluster pulls on every restart) exists until
 // both have passed.
