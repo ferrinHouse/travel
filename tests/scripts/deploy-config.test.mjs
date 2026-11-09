@@ -94,3 +94,26 @@ test('deploy waits for the promoted image', () => {
   assert.deepEqual(needs('deploy'), ['promote']);
   assert.match(deployment, /image: ghcr\.io\/ferrinhouse\/travel-site:latest/);
 });
+
+// --- GitHub Actions versions: Node 20 actions are deprecated on runners.
+// These are the first majors that run on Node 24.
+const MIN_MAJOR = {
+  'actions/checkout': 5,
+  'actions/setup-node': 5,
+  'docker/setup-buildx-action': 4,
+  'docker/login-action': 4,
+  'docker/build-push-action': 7,
+};
+
+test('every workflow uses Node 24 versions of its actions', () => {
+  const dir = path.join(ROOT, '.github', 'workflows');
+  const uses = fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith('.yml'))
+    .flatMap((f) => [...read('.github', 'workflows', f).matchAll(/uses:\s*([\w.-]+\/[\w.-]+)@v(\d+)/g)].map((m) => ({ f, action: m[1], major: Number(m[2]) })));
+  assert.ok(uses.length > 0);
+  for (const { f, action, major } of uses) {
+    assert.ok(action in MIN_MAJOR, `${f}: ${action} is new; add its first Node 24 major to MIN_MAJOR`);
+    assert.ok(major >= MIN_MAJOR[action], `${f}: ${action}@v${major} runs on Node 20 (need v${MIN_MAJOR[action]}+)`);
+  }
+});
