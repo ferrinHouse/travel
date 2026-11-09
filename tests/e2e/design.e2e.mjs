@@ -139,16 +139,38 @@ describe('theme', () => {
   });
 });
 
+/**
+ * Next 16 streams generateMetadata output after the first HTML for normal
+ * browsers, so the title can land a moment after goto() resolves. Wait for it
+ * rather than reading it once (that raced on slower CI runners).
+ */
+async function waitForTitle(page, expected) {
+  const isRegExp = expected instanceof RegExp;
+  const arg = isRegExp ? { source: expected.source, flags: expected.flags } : { exact: expected };
+  try {
+    await page.waitForFunction(
+      (want) => (want.exact !== undefined ? document.title === want.exact : new RegExp(want.source, want.flags).test(document.title)),
+      arg,
+      { timeout: 5_000 }
+    );
+  } catch {
+    // Fail with the actual title in the message.
+    const title = await page.title();
+    if (isRegExp) assert.match(title, expected);
+    else assert.equal(title, expected);
+  }
+}
+
 describe('metadata', () => {
   test('pages get descriptive titles', async () => {
     const context = await app.browser.newContext();
     const page = await context.newPage();
     await page.goto(app.baseURL);
-    assert.equal(await page.title(), 'Family Travel Adventures');
+    await waitForTitle(page, 'Family Travel Adventures');
     await page.goto(`${app.baseURL}/trips/testville`);
-    assert.equal(await page.title(), 'Testville Getaway | Family Travel Adventures');
+    await waitForTitle(page, 'Testville Getaway | Family Travel Adventures');
     await page.goto(`${app.baseURL}/trips/atlantis`);
-    assert.match(await page.title(), /not found/i);
+    await waitForTitle(page, /not found/i);
     await context.close();
   });
 });
