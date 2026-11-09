@@ -293,3 +293,8 @@
     margin-top: 8px;
   }
 }
+
+.dayTitleForm {
+  margin: var(--space-3) 0 var(--space-4);
+  max-width: 28rem;
+}

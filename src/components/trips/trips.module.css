@@ -1,0 +1,241 @@
+/* Trip form (new trip + trip settings) */
+.page {
+  padding-block: var(--space-8) var(--space-16);
+}
+
+.header {
+  margin-bottom: var(--space-6);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: var(--step-4);
+  line-height: var(--leading-tight);
+  color: var(--heading);
+  margin: 0 0 var(--space-1);
+}
+
+.lede {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.layout {
+  display: grid;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .layout {
+    grid-template-columns: minmax(0, 40rem) minmax(16rem, 22rem);
+  }
+
+  .preview {
+    grid-column: 2;
+    grid-row: 1;
+    position: sticky;
+    top: calc(var(--site-header-h) + var(--space-6));
+  }
+}
+
+.previewLabel {
+  margin: 0 0 var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--step--1);
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.form {
+  display: grid;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.fieldset {
+  margin: 0;
+  min-width: 0;
+}
+
+.legend {
+  float: left; /* puts the legend inside the card's padding */
+  width: 100%;
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  color: var(--heading);
+}
+
+.legend + * {
+  clear: both;
+}
+
+.optional {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.slugRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+
+.slugPrefix {
+  color: var(--text-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.dateRow {
+  display: grid;
+  gap: 0 var(--space-4);
+}
+
+@media (min-width: 480px) {
+  .dateRow {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.colorRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-8);
+  margin-bottom: var(--space-4);
+}
+
+.color {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-weight: 650;
+}
+
+.color input {
+  width: 52px;
+  height: 44px;
+  padding: 2px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+  cursor: pointer;
+}
+
+.choices {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.choice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.choice:has(:checked) {
+  border-color: var(--accent);
+  background-color: var(--surface-2);
+}
+
+.choice input {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+
+.choice > span {
+  display: grid;
+}
+
+.choiceHint {
+  color: var(--text-muted);
+  font-size: var(--step--1);
+}
+
+.actions {
+  align-items: center;
+}
+
+/* Archive / delete */
+.danger {
+  margin-top: var(--space-8);
+  max-width: 40rem;
+  border-color: var(--danger);
+}
+
+.dangerRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-6);
+  padding-block: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+.dangerTitle {
+  margin: 0 0 var(--space-1);
+  font-size: var(--step-0);
+}
+
+.dangerText {
+  margin: 0;
+  color: var(--text-muted);
+  max-width: 28rem;
+}
+
+/* Dashboard */
+.sectionHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.sectionHead :global(.section-title) {
+  margin-bottom: var(--space-4);
+}
+
+.archived > summary {
+  cursor: pointer;
+  width: fit-content;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.archived > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* display:flex drops the native marker, so draw one. */
+.archived > summary::before {
+  content: '▸';
+  font-size: var(--step-2);
+  line-height: 1;
+  color: var(--text-muted);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.archived[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.archived > summary :global(.section-title) {
+  margin: 0;
+}
+
+.archived[open] > summary {
+  margin-bottom: var(--space-4);
+}

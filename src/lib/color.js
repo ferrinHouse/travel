@@ -7,8 +7,8 @@ export const SURFACES = {
   dark: ['#161b22', '#0d1117', '#1f2630'],
 };
 
-const DEFAULT_PRIMARY = '#2c3e50';
-const DEFAULT_ACCENT = '#3498db';
+export const DEFAULT_PRIMARY = '#2c3e50';
+export const DEFAULT_ACCENT = '#3498db';
 const WHITE = '#ffffff';
 const INK = '#111827';
 

@@ -30,7 +30,9 @@ A trip itinerary/logistics/packing/meal-planning app for the Ferrin household. F
 - `src/lib/color.js` — `tripTheme(trip)` turns a trip's colours into AA-checked `--trip-*` CSS variables; `src/lib/theme.js` — theme preference + the inline no-flash `<head>` script; `src/lib/trip-status.js` — `tripPhase` (upcoming / Day N of M / past) and labels
 - `prisma/schema.prisma` — trip models: Trip, ItineraryDay, ItineraryActivity, MealPlan, ChecklistItem, LogisticsCard, GroceryItem, all keyed off `Trip.id` (a slug like `"chicago"`); auth models: User, Session, Passkey, Invite, AuthChallenge
 - `scripts/admin-reset.mjs` — lockout recovery (prints a one-time reset link); self-contained better-sqlite3, copied into the image
-- `prisma/seed.js` / `seed-meals.js` — the only way trips currently get created (no in-app trip creation UI yet)
+- `prisma/seed.js` / `seed-meals.js` — demo data (they wipe the DB; `--force` required). Real trips are created in the app at `/trips/new`
+- `src/lib/trips/` — pure trip logic: `dates.js` (midnight-UTC calendar days, `formatDateRange`, `dayLabel`), `scaffold.js` (`buildDays`, `reconcileDays`: never drops a day with activities/meals, returns `blocked` instead), `slug.js`, `validation.js` (`validateTrip`, shared by the form and the API), `form.js`, `checklist-templates.js`. `src/lib/api/trips.js` uses them for create/edit/archive/delete and day titles
+- `src/components/trips/` also holds `TripForm` (create + edit, live preview) and `TripDangerZone` (archive / delete with typed-name confirm); pages are `src/app/trips/new` and `src/app/trips/[id]/edit`
 
 ### Auth model
 
@@ -62,7 +64,8 @@ npm run seed:meals -- --force  # re-seed meal/grocery data (seed scripts wipe da
 - Client mutations go through `apiFetch` (`src/lib/api-client.js`) and report failures with `useToast()`; confirmations use `useConfirm()`, never `alert`/`confirm`.
 - Pure logic goes in `src/lib/*.js` with relative imports (no `@/`, no `next/*`) so `node --test` can load it; add a test in `tests/`.
 - Never enable SQLite WAL mode — production SQLite is on NFS.
-- `Trip.id` is a human-readable slug, not a generated ID — keep using slugs if adding trip-scoped code.
+- `Trip.id` is a human-readable slug, not a generated ID — keep using slugs if adding trip-scoped code. It is chosen once at creation and never changes; new reserved words for pages under `/trips/` go in `RESERVED_SLUGS` (`src/lib/trips/slug.js`).
+- Trip dates are midnight UTC; do date maths with `src/lib/trips/dates.js`, never local-time `Date` methods. A day's date is `startDate + position`, so there is no per-day date column. Meals link to days by `dayNumber`.
 
 ### Testing (test-first)
 

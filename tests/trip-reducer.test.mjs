@@ -74,6 +74,15 @@ test('meal upsert updates an existing slot without losing fields, or inserts a n
   assert.deepStrictEqual(trip.meals.map((m) => m.id), [6]);
 });
 
+test('day patch renames one day and keeps its activities', () => {
+  const start = baseTrip();
+  const next = tripReducer(start, { type: 'day/patch', id: 100, patch: { title: 'Arrival' } });
+  assert.strictEqual(next.days[0].title, 'Arrival');
+  assert.deepStrictEqual(next.days[0].activities, start.days[0].activities);
+  assert.strictEqual(next.days[1], start.days[1]);
+  assert.strictEqual(start.days[0].title, undefined, 'original state is not mutated');
+});
+
 test('unknown actions throw', () => {
   assert.throws(() => tripReducer(baseTrip(), { type: 'nope' }), /Unknown trip action/);
 });

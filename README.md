@@ -13,6 +13,12 @@ A modern, responsive travel companion and itinerary management web application b
   - Trip hero with a countdown, or "Day 3 of 6" while you're there, with today's plan highlighted and the next activity marked.
   - Phone-friendly bottom tab bar.
   - Quick metadata overview (dates, travel group, tags, descriptions).
+  - Archived trips are tucked into a collapsed **Archived** section.
+
+- **Planning Trips in the App** (admins):
+  - **Plan a trip** (`/trips/new`): name, web address, trip type, who's going, dates and colours, with a live preview card. One itinerary day is created per date, plus a starter checklist (or one copied from another trip, or none).
+  - **Trip settings** (`/trips/<id>/edit`, from the trip page): change any detail. New dates add days at the end, or remove empty ones; a day that already has activities or meals is never removed (the save is refused and says which day). Auto-generated day labels follow the new dates; hand-written ones are kept.
+  - Rename a day in Edit mode, archive/restore a trip, or delete it (type the trip name to confirm).
 
 - **Unified Day-by-Day Itinerary**:
   - Chronologically interweaves scheduled activities and meals (Breakfast, Lunch, Dinner).
@@ -82,6 +88,8 @@ travel/
 │   ├── app/
 │   │   ├── api/                 # Next.js Route Handlers (REST endpoints)
 │   │   │   ├── activities/      # Itinerary activity CRUD
+│   │   │   ├── trips/           # Create / edit / delete trips, archive (trips/archive)
+│   │   │   ├── days/            # Day titles
 │   │   │   ├── auth/            # Sign in/out, first-run setup, invites, passkey sign-in
 │   │   │   ├── account/         # Own password, passkeys and sessions
 │   │   │   ├── users/           # Admin user management
@@ -89,13 +97,14 @@ travel/
 │   │   │   ├── grocery/         # Master grocery items
 │   │   │   ├── logistics/       # Logistics info cards
 │   │   │   └── meals/           # Meal planner upserts
-│   │   ├── trips/[id]/          # Dynamic trip detail page with tabbed view
+│   │   ├── trips/new/           # Plan a new trip (admins)
+│   │   ├── trips/[id]/          # Dynamic trip detail page with tabbed view; edit/ = trip settings
 │   │   ├── layout.js            # Root HTML shell, fonts, metadata, no-flash theme script
 │   │   └── page.js              # Dashboard homepage (Upcoming & Past trips)
 │   ├── components/
 │   │   ├── site/                # Sticky site header + System/Light/Dark theme switch
 │   │   ├── trip/                # Trip detail page: tab shell + itinerary/logistics/checklist/meals tabs
-│   │   ├── trips/               # Trip hero, dashboard cards, featured "next adventure"
+│   │   ├── trips/               # Trip hero, dashboard cards, featured "next adventure", trip form, archive/delete
 │   │   └── ui/                  # Shared UI kit: Modal, Toast, ConfirmDialog, Markdown, Skeleton
 │   ├── styles/                  # Design tokens (light/dark), base, components, utilities
 │   └── lib/
@@ -106,6 +115,7 @@ travel/
 │       ├── theme.js             # Theme preference + inline no-flash script
 │       ├── trip-status.js       # Countdown / "Day N of M" / past
 │       ├── trip-reducer.js      # Pure reducer for trip page state
+│       ├── trips/               # Trip dates, day scaffolding/reconciling, slugs, form validation, starter checklist
 │       └── api-client.js        # fetch wrapper that throws on API errors
 ├── tests/
 │   ├── *.test.mjs               # Unit tests for pure modules in src/lib
@@ -126,8 +136,8 @@ travel/
 
 Defined in [`prisma/schema.prisma`](prisma/schema.prisma):
 
-- **`Trip`**: Primary trip entity (`id`, `name`, `dates`, `travelers`, `status`, `startDate`, `endDate`, `tag`, `primaryColor`, `accentColor`).
-- **`ItineraryDay`**: Calendar days assigned to a trip (`dayNumber`, `dateLabel`, `title`).
+- **`Trip`**: Primary trip entity (`id`, `name`, `dates`, `travelers`, `status`, `startDate`, `endDate`, `tag`, `primaryColor`, `accentColor`, `archivedAt`). `id` is the web address (`/trips/<id>`) and never changes; `dates` is display text derived from the dates.
+- **`ItineraryDay`**: Calendar days assigned to a trip (`dayNumber`, `dateLabel`, `title`). A day's date is the trip start plus its position.
 - **`ItineraryActivity`**: Timed or untimed activities for a day (`time`, `description`, `details`, `isAlert`, `order`).
 - **`MealPlan`**: Meal scheduling per day (`dayNumber`, `mealType`, `mealName`, `details`, `time`).
 - **`ChecklistItem`**: Shared tasks and packing requirements (`text`, `category`, `isCompleted`).
@@ -241,6 +251,9 @@ Handlers live in `src/lib/api/` and check permissions with `deny(ctx, action)`: 
 | `GET`/`POST`/`PATCH` | `/api/users` | Admin | List / add (returns invite link token) / change role, name or on-off |
 | `POST` | `/api/users/link` | Admin | New one-time invite or reset link |
 | `DELETE` | `/api/users/sessions` | Admin | Sign someone out everywhere |
+| `POST`/`PATCH`/`DELETE` | `/api/trips` | Admin | Create (with days + checklist) / edit (reconciles days; `409` if a day with plans would go) / delete (needs `confirmName`) |
+| `POST` | `/api/trips/archive` | Admin | Archive or restore (`{ id, archived }`) |
+| `PATCH` | `/api/days` | Admin | Set a day's title |
 | `POST` | `/api/checklist` | Member | Tick an item, or add one; renaming needs Admin |
 | `DELETE` | `/api/checklist` | Admin | Delete a checklist item |
 | `POST` | `/api/grocery` | Member | Tick a grocery item |
@@ -313,12 +326,7 @@ The following features and architectural enhancements are planned for upcoming r
 - Done: per-person accounts with passwords and passkeys, Viewer/Member/Admin roles, invite and reset links. Still open: an audit log of edits.
 
 ### 2. ➕ Dynamic Trip Creation & Management (UI & API)
-- **Current State**: New trips are currently added via database seeding scripts (`prisma/seed.js`) or direct database insertions.
-- **Planned Improvements**:
-  - **In-App Trip Creator Wizard**: Add an interactive **"+ New Trip"** modal or dedicated setup page accessible to authenticated admins.
-  - **Customizable Metadata & Theming**: Form controls to define trip slug ID, name, date range (`startDate` to `endDate`), traveler list, tags (City, Island, Beach, National Parks), and custom primary/accent hex color palettes.
-  - **Auto-Scaffolded Schedules**: Automatically generate day slots (`Day 1`, `Day 2`, etc.) matching the date range, along with baseline checklist categories (Pre-Trip, Packing, Apps) and empty meal templates.
-  - **Trip Editing & Archiving**: Full UI controls to edit existing trip details, manually adjust upcoming/past status, and safely archive or delete trips with cascading cleanup.
+- Done: plan, edit, archive and delete trips in the app, with day lists kept in step with the dates. Still open: reordering or inserting days in the middle of a trip, and copying a whole itinerary from a past trip.
 
 ### 3. 📱 Offline Support & Progressive Web App (PWA)
 - Implement service workers and manifest caching so full itineraries, flight confirmations, hotel addresses, and packing lists remain accessible when traveling through areas with spotty cellular coverage (e.g., flights, cruises, national parks).

@@ -1,8 +1,10 @@
 export class ApiError extends Error {
-  constructor(message, status) {
+  /** `data` is the parsed response body (e.g. per-field `errors`), or null. */
+  constructor(message, status, data = null) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
+    this.data = data;
   }
 }
 
@@ -33,7 +35,7 @@ export async function apiFetch(url, { method = 'GET', body } = {}) {
   if (!res.ok || !data || data.success === false) {
     const fallback =
       res.status === 401 ? 'Your sign-in has expired. Please sign in again.' : `Request failed (${res.status}).`;
-    throw new ApiError(data?.message || fallback, res.status);
+    throw new ApiError(data?.message || fallback, res.status, data);
   }
   return data;
 }

@@ -3,8 +3,8 @@ import { tripTheme } from '@/lib/color';
 import { tagClass } from '@/lib/tags';
 import { phaseLabel } from '@/lib/trip-status';
 
-/** Dashboard card. `status` comes from tripPhase(). */
-export default function TripCard({ trip, status }) {
+/** Dashboard card. `status` comes from tripPhase(). `preview` (the trip form) renders no link. */
+export default function TripCard({ trip, status, preview = false }) {
   const past = status.phase === 'past';
   return (
     <article
@@ -21,9 +21,15 @@ export default function TripCard({ trip, status }) {
       {trip.description && <p className="trip-card-desc">{trip.description}</p>}
       <div className="trip-card-foot">
         <span className={`countdown ${status.phase === 'active' ? 'countdown-live' : ''}`}>{phaseLabel(status)}</span>
-        <Link href={`/trips/${trip.id}`} className={`btn ${past ? 'btn-ghost' : ''}`}>
-          {past ? 'View Details' : 'View Itinerary'}
-        </Link>
+        {preview ? (
+          <span className={`btn ${past ? 'btn-ghost' : ''}`} aria-hidden="true">
+            {past ? 'View Details' : 'View Itinerary'}
+          </span>
+        ) : (
+          <Link href={`/trips/${trip.id}`} className={`btn ${past ? 'btn-ghost' : ''}`}>
+            {past ? 'View Details' : 'View Itinerary'}
+          </Link>
+        )}
       </div>
     </article>
   );
