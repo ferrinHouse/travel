@@ -18,6 +18,7 @@ function existing(start, count, { firstNumber = 1, busy = {}, labels = {} } = {}
       dateLabel: labels[dayNumber] ?? dayLabel(date, dayNumber),
       activityCount: busy[dayNumber]?.activities ?? 0,
       mealCount: busy[dayNumber]?.meals ?? 0,
+      photoCount: busy[dayNumber]?.photos ?? 0,
     };
   });
 }
@@ -85,6 +86,13 @@ describe('reconcileDays', () => {
     const plan = reconcileDays({ days, oldStart, newStart: oldStart, newEnd: d('2026-06-21') });
     assert.deepEqual(plan.blocked.map((x) => x.dayNumber), [3, 4]);
     assert.deepEqual(plan.blocked[0], { id: 102, dayNumber: 3, dateLabel: 'Day 3: Monday, June 22' });
+  });
+
+  test('a day with photos is never dropped either', () => {
+    const days = existing('2026-06-20', 3, { busy: { 3: { photos: 1 } } });
+    const plan = reconcileDays({ days, oldStart, newStart: oldStart, newEnd: d('2026-06-21') });
+    assert.deepEqual(plan.blocked.map((x) => x.dayNumber), [3]);
+    assert.deepEqual(plan.remove, []);
   });
 
   test('days are matched by position even if numbering has gaps', () => {

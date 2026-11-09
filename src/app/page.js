@@ -7,12 +7,17 @@ import TripCard from '@/components/trips/TripCard';
 import FeaturedTrip from '@/components/trips/FeaturedTrip';
 import { requirePageUser } from '@/lib/auth/current-user';
 import styles from '@/components/trips/trips.module.css';
+import { photoUrl } from '@/lib/photos/view';
+
+const coverOf = (trip) => (trip.photos?.[0] ? photoUrl(trip.photos[0], 'lg') : undefined);
 
 export const revalidate = 0; // Always render fresh so edits show immediately
 
 async function getTrips() {
   try {
-    return await prisma.trip.findMany();
+    return await prisma.trip.findMany({
+      include: { photos: { where: { isCover: true }, select: { id: true }, take: 1 } },
+    });
   } catch (error) {
     console.error('Error fetching trips:', error);
     return [];
@@ -68,7 +73,7 @@ export default async function DashboardPage() {
               {later.length > 0 && (
                 <div className="grid">
                   {later.map(({ trip, status }) => (
-                    <TripCard key={trip.id} trip={trip} status={status} />
+                    <TripCard key={trip.id} trip={trip} status={status} coverSrc={coverOf(trip)} />
                   ))}
                 </div>
               )}
@@ -91,7 +96,7 @@ export default async function DashboardPage() {
           ) : (
             <div className="grid">
               {past.map(({ trip, status }) => (
-                <TripCard key={trip.id} trip={trip} status={status} />
+                <TripCard key={trip.id} trip={trip} status={status} coverSrc={coverOf(trip)} />
               ))}
             </div>
           )}
@@ -107,7 +112,7 @@ export default async function DashboardPage() {
               </summary>
               <div className="grid">
                 {archived.map(({ trip, status }) => (
-                  <TripCard key={trip.id} trip={trip} status={status} />
+                  <TripCard key={trip.id} trip={trip} status={status} coverSrc={coverOf(trip)} />
                 ))}
               </div>
             </details>

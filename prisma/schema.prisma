@@ -29,6 +29,8 @@ model Trip {
   days         ItineraryDay[]
   meals        MealPlan[]
   groceries    GroceryItem[]
+  photos       Photo[]
+  shareLinks   TripShareLink[]
 }
 
 model ChecklistItem {
@@ -105,6 +107,7 @@ model User {
   sessions       Session[]
   passkeys       Passkey[]
   invites        Invite[]
+  photos         Photo[]
 }
 
 model Session {
@@ -154,4 +157,39 @@ model AuthChallenge {
   purpose   String // "register" | "login"
   userId    Int?
   expiresAt DateTime
+}
+
+// ---- Scrapbook (PR 5). New tables only. ----
+
+// Files live on the uploads volume at <UPLOADS_DIR>/photos/<tripId>/<storageKey>/
+// as orig.jpg (<=4096px), lg.webp (1600px) and sm.webp (480px), metadata stripped.
+model Photo {
+  id           Int       @id @default(autoincrement())
+  tripId       String
+  trip         Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  storageKey   String    @unique // random folder name; files never change once written
+  dayNumber    Int? // itinerary day, matched like meals; null = not on a trip day
+  uploadedById Int?
+  uploadedBy   User?     @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  caption      String?
+  takenAt      DateTime? // camera clock (local wall time), stored as if it were UTC
+  width        Int
+  height       Int
+  bytes        Int // all three files together
+  isCover      Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+
+  @@index([tripId])
+}
+
+// Optional read-only link to a trip's story page. Off until an admin makes one.
+model TripShareLink {
+  id          String    @id // sha256 of the link token
+  tripId      String
+  trip        Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  createdById Int?
+  revokedAt   DateTime?
+
+  @@index([tripId])
 }

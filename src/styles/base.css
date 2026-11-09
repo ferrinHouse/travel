@@ -81,7 +81,7 @@ img {
 .site-header {
   position: sticky;
   top: 0;
-  z-index: var(--z-sticky);
+  z-index: var(--z-header);
   height: var(--site-header-h);
   background-color: color-mix(in oklch, var(--surface) 85%, transparent);
   backdrop-filter: saturate(1.4) blur(12px);
@@ -220,5 +220,58 @@ img {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* Trip hero with a cover photo: a tilted print beside the text */
+.hero-with-cover .hero-inner {
+  display: grid;
+  gap: var(--space-6);
+  align-items: center;
+}
+
+@media (min-width: 720px) {
+  .hero-with-cover .hero-inner {
+    grid-template-columns: minmax(0, 1fr) minmax(12rem, 22rem);
+  }
+}
+
+.hero-cover {
+  width: 100%;
+  max-height: 16rem;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border: 6px solid var(--surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-3);
+  rotate: 2deg;
+}
+
+@media (max-width: 719px) {
+  .hero-cover {
+    max-height: 12rem;
+    rotate: 0deg;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-cover {
+    transition: rotate var(--duration) var(--ease-out);
+  }
+
+  .hero-cover:hover {
+    rotate: 0deg;
+  }
+}
+
+/* Paper: no app chrome (the trip story page is made to be printed) */
+@media print {
+  .site-header,
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: none;
   }
 }

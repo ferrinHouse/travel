@@ -1,0 +1,32 @@
+# Scrapbook photos (PR 5): a separate NFS export from the database so photos
+# can grow (and be backed up) on their own. Retain: deleting the PV/PVC never
+# deletes the photos. The NAS export must be owned by uid/gid 1001 (the
+# container's nextjs user): chown -R 1001:1001 /export/travel-uploads
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: travel-uploads-pv
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    server: REPLACE_ME_VIA_PATCH
+    path: REPLACE_ME_VIA_PATCH
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: travel-uploads-pvc
+spec:
+  storageClassName: manual
+  # Bind to exactly this volume, never another free "manual" PV.
+  volumeName: travel-uploads-pv
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 20Gi

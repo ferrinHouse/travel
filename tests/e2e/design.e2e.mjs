@@ -286,6 +286,27 @@ describe('mobile tab bar', () => {
   });
 });
 
+describe('account menu', () => {
+  test('opens above the sticky trip tabs, not underneath them', async () => {
+    // A short window, scrolled to the end: the tab bar sticks right under the header.
+    const { page, context } = await openTrip(app, { as: 'admin', viewport: { width: 1024, height: 420 } });
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await page.waitForFunction(() => document.querySelector('.tabs').getBoundingClientRect().top < 120);
+    await page.locator('summary', { hasText: 'account menu' }).click();
+    await page.getByRole('link', { name: 'Your account' }).waitFor();
+    // Every corner of every menu item must be the topmost thing on screen.
+    const covered = await page.evaluate(() =>
+      [...document.querySelectorAll('.site-header details[open] a, .site-header details[open] button')].flatMap((item) => {
+        const r = item.getBoundingClientRect();
+        const points = [[r.left + 2, r.top + 2], [r.right - 2, r.top + 2], [r.left + 2, r.bottom - 2], [r.right - 2, r.bottom - 2]];
+        return points.some(([x, y]) => !item.contains(document.elementFromPoint(x, y))) ? [item.textContent.trim()] : [];
+      })
+    );
+    assert.deepEqual(covered, [], 'menu items hidden behind something');
+    await context.close();
+  });
+});
+
 describe('site header on phones', () => {
   // The bar holds the site name, the theme toggle and the account avatar.
   const headerLayout = (page) =>
@@ -349,7 +370,7 @@ describe('accessibility (axe, WCAG 2.1 AA)', () => {
     for (const id of ['testville', 'nowville', 'oldtown']) {
       test(`${id}: every tab has no violations (${colorScheme})`, async () => {
         const { page, context } = await openTrip(app, { id, contextOptions: { colorScheme } });
-        for (const name of [/Itinerary/, /Logistics/, /Packing/, /Meals/]) {
+        for (const name of [/Itinerary/, /Logistics/, /Packing/, /Meals/, /Photos/]) {
           await page.getByRole('tab', { name }).click();
           assert.deepEqual(await axeViolations(page), [], `${name} tab`);
         }

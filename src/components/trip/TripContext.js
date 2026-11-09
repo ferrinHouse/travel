@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from 'react';
 
-/** { trip, dispatch, canToggle, canAdd, canEdit, isAdmin } for the trip detail page (see lib/trip-permissions). */
+/** { trip, dispatch, userId, canToggle, canAdd, canUpload, canEdit, isAdmin } for the trip detail page (see lib/trip-permissions). */
 const TripContext = createContext(null);
 
 export const TripProvider = TripContext.Provider;

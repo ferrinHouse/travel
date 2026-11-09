@@ -78,6 +78,21 @@ export function tripReducer(trip, action) {
         meals: trip.meals.filter((m) => !sameMeal(m, action.dayNumber, action.mealType)),
       };
 
+    case 'photo/add':
+      return { ...trip, photos: [...trip.photos, action.photo] };
+    case 'photo/patch': {
+      // A new cover replaces the old one.
+      const clearCover = action.patch.isCover === true;
+      return {
+        ...trip,
+        photos: trip.photos.map((p) =>
+          p.id === action.id ? { ...p, ...action.patch } : clearCover && p.isCover ? { ...p, isCover: false } : p
+        ),
+      };
+    }
+    case 'photo/remove':
+      return { ...trip, photos: trip.photos.filter((p) => p.id !== action.id) };
+
     default:
       throw new Error(`Unknown trip action: ${action.type}`);
   }

@@ -47,3 +47,6 @@ preview.ps1
 *.db
 *.db-journal
 
+
+# photo uploads (local dev)
+/uploads/

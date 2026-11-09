@@ -167,3 +167,46 @@ test('every probe allows a slow health response (no 1s default timeout)', () => 
     assert.ok(timeout >= 5, `${probe} timeoutSeconds is ${timeout}`);
   }
 });
+
+// ---- scrapbook photos (PR 5) ----
+
+const uploadsStorage = read('k8s', 'base', 'uploads-storage.yaml');
+
+test('photos live on their own 20Gi NFS volume that is never recycled', () => {
+  assert.match(uploadsStorage, /kind: PersistentVolume\n/);
+  assert.match(uploadsStorage, /name: travel-uploads-pv/);
+  assert.match(uploadsStorage, /storage: 20Gi/);
+  assert.match(uploadsStorage, /persistentVolumeReclaimPolicy: Retain/);
+  assert.match(uploadsStorage, /ReadWriteMany/);
+  // The claim binds to exactly this volume, never to some other free PV.
+  assert.match(uploadsStorage, /kind: PersistentVolumeClaim[\s\S]*name: travel-uploads-pvc[\s\S]*volumeName: travel-uploads-pv/);
+  assert.match(kustomization, /- base\/uploads-storage\.yaml/);
+});
+
+test('the uploads volume points at its own NFS export', () => {
+  const patch = read('k8s', 'patches', 'nfs-server.yaml');
+  assert.match(patch, /name: travel-uploads-pv[\s\S]*path: \/export\/travel-uploads/);
+  assert.match(patch, /name: travel-site-pv[\s\S]*path: \/export\/travel-db/);
+});
+
+test('the pod mounts the uploads volume where UPLOADS_DIR points, with an upload size limit', () => {
+  assert.match(deployment, /mountPath: \/app\/uploads/);
+  assert.match(deployment, /claimName: travel-uploads-pvc/);
+  assert.match(deployment, /name: UPLOADS_DIR\s*\n\s*value: "\/app\/uploads"/);
+  assert.match(deployment, /name: MAX_UPLOAD_MB\s*\n\s*value: "\d+"/);
+});
+
+test('enough memory for resizing photos with sharp', () => {
+  assert.match(deployment, /limits:[\s\S]*memory: "512Mi"/);
+});
+
+test('the image has a writable uploads folder and a working sharp', () => {
+  const dockerfile = read('Dockerfile');
+  assert.match(dockerfile, /mkdir -p \/app\/database \/app\/uploads/);
+  assert.match(dockerfile, /RUN node -e "require\('sharp'\)/);
+});
+
+test('the standalone build ships sharp’s native libvips files (the tracer can’t see them)', () => {
+  const nextConfig = read('next.config.mjs');
+  assert.match(nextConfig, /outputFileTracingIncludes:\s*\{[\s\S]*'\/api\/photos':\s*\[[^\]]*'\.\/node_modules\/@img\/\*\*\/\*'/);
+});

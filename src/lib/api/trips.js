@@ -4,6 +4,7 @@ import { badRequest, isId, isObject, notFound, ok, text } from './run.js';
 import { deny } from './guard.js';
 import { validateTrip } from '../trips/validation.js';
 import { buildDays, reconcileDays } from '../trips/scaffold.js';
+import { removeTripFiles } from '../photos/storage.js';
 import { slugProblem, slugify, uniqueSlug } from '../trips/slug.js';
 import { dayKey } from '../trips/dates.js';
 import { STARTER_CHECKLIST } from '../trips/checklist-templates.js';
@@ -99,6 +100,7 @@ export async function updateTrip(ctx) {
     include: {
       days: { select: { id: true, dayNumber: true, dateLabel: true, _count: { select: { activities: true } } } },
       meals: { select: { dayNumber: true } },
+      photos: { select: { dayNumber: true } },
     },
   });
   if (!trip) return notFound('Trip not found');
@@ -120,6 +122,7 @@ export async function updateTrip(ctx) {
           dateLabel: d.dateLabel,
           activityCount: d._count.activities,
           mealCount: trip.meals.filter((m) => m.dayNumber === d.dayNumber).length,
+          photoCount: trip.photos.filter((p) => p.dayNumber === d.dayNumber).length,
         })),
         oldStart: trip.startDate,
         newStart: value.startDate,
@@ -174,7 +177,11 @@ export async function deleteTrip(ctx) {
   if (text(body.confirmName) !== trip.name) {
     return badRequest(`Type the trip name (“${trip.name}”) exactly to delete it.`);
   }
-  await db.trip.delete({ where: { id: trip.id } }); // days, items, meals… cascade
+  await db.trip.delete({ where: { id: trip.id } }); // days, items, meals, photo rows… cascade
+  if (ctx.config?.uploadsDir) {
+    // The rows are gone either way; a leftover folder is only wasted space.
+    await removeTripFiles(ctx.config.uploadsDir, trip.id).catch((err) => console.error(`Couldn't remove photos for ${trip.id}:`, err));
+  }
   return ok();
 }
 

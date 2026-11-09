@@ -4,13 +4,13 @@ import { isPublicPath, loginRedirect } from '../src/lib/auth/proxy-rules.js';
 
 describe('isPublicPath', () => {
   test('sign-in pages and health checks are open', () => {
-    for (const path of ['/login', '/setup', '/invite/abc123', '/api/health', '/api/auth/login', '/_next/static/x.js', '/favicon.ico']) {
+    for (const path of ['/login', '/setup', '/invite/abc123', '/share/abc123', '/api/share/abc/1/sm', '/api/health', '/api/auth/login', '/_next/static/x.js', '/favicon.ico']) {
       assert.equal(isPublicPath(path), true, path);
     }
   });
 
   test('everything else needs a session', () => {
-    for (const path of ['/', '/trips/chicago', '/account', '/admin/users', '/loginx', '/invite', '/setup-wizard', '/api/checklist']) {
+    for (const path of ['/', '/trips/chicago', '/account', '/admin/users', '/loginx', '/invite', '/share', '/trips/x/story', '/api/photos/1/sm', '/setup-wizard', '/api/checklist']) {
       assert.equal(isPublicPath(path), false, path);
     }
   });

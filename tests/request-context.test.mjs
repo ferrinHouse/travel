@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { appConfig, clientIp, requestInfo, readQuery } from '../src/lib/api/request-context.js';
+import { appConfig, clientIp, requestInfo, readQuery, readLimited } from '../src/lib/api/request-context.js';
 
 const headers = (obj) => new Headers(obj);
 
@@ -13,6 +13,8 @@ describe('appConfig (from environment variables)', () => {
       rpName: 'Family Travel Adventures',
       setupToken: 's3t',
       secureCookies: true,
+      uploadsDir: 'uploads',
+      maxUploadBytes: 25 * 1024 * 1024,
     });
   });
 
@@ -71,5 +73,57 @@ describe('readQuery', () => {
   test('turns GET query strings into a body object', () => {
     assert.deepEqual(readQuery('https://x/api/auth/invite?token=abc&x=1'), { token: 'abc', x: '1' });
     assert.equal(readQuery('https://x/api/users'), null);
+  });
+});
+
+describe('photo upload settings', () => {
+  test('UPLOADS_DIR and MAX_UPLOAD_MB come from the environment', () => {
+    const config = appConfig({ UPLOADS_DIR: ' /app/uploads ', MAX_UPLOAD_MB: '10' });
+    assert.equal(config.uploadsDir, '/app/uploads');
+    assert.equal(config.maxUploadBytes, 10 * 1024 * 1024);
+  });
+
+  test('defaults: ./uploads and 25 MB; nonsense limits fall back to the default', () => {
+    for (const bad of [undefined, '', 'lots', '0', '-3']) {
+      assert.equal(appConfig({ MAX_UPLOAD_MB: bad }).maxUploadBytes, 25 * 1024 * 1024, String(bad));
+    }
+    assert.equal(appConfig({}).uploadsDir, 'uploads');
+  });
+});
+
+describe('readLimited (upload bodies)', () => {
+  const streamOf = (...chunks) =>
+    new ReadableStream({
+      start(controller) {
+        for (const c of chunks) controller.enqueue(new Uint8Array(c));
+        controller.close();
+      },
+    });
+
+  test('reads the whole body when it fits', async () => {
+    const { bytes, truncated } = await readLimited(streamOf([1, 2, 3], [4, 5]), 5);
+    assert.equal(truncated, false);
+    assert.deepEqual([...bytes], [1, 2, 3, 4, 5]);
+    assert.ok(Buffer.isBuffer(bytes));
+  });
+
+  test('stops reading and reports truncated once it goes over the limit', async () => {
+    let pulled = 0;
+    const endless = new ReadableStream({
+      pull(controller) {
+        pulled++;
+        controller.enqueue(new Uint8Array(4));
+      },
+    });
+    const { bytes, truncated } = await readLimited(endless, 10);
+    assert.equal(truncated, true);
+    assert.equal(bytes, null);
+    assert.ok(pulled < 10, 'gave up early');
+  });
+
+  test('no body is an empty buffer', async () => {
+    const { bytes, truncated } = await readLimited(null, 10);
+    assert.equal(truncated, false);
+    assert.equal(bytes.length, 0);
   });
 });

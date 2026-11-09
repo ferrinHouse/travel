@@ -1,0 +1,253 @@
+/* Photos tab */
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.title {
+  margin: 0;
+}
+
+.uploader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+/* The real picker stays in the page (tests and assistive tech can reach it) but out of sight. */
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.uploadStatus {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  color: var(--text-muted);
+}
+
+.uploadStatus progress {
+  width: 12rem;
+  max-width: 100%;
+  accent-color: var(--accent);
+}
+
+.uploadFailed {
+  flex-basis: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+}
+
+.uploadFailed p {
+  margin: 0 0 var(--space-2);
+  font-weight: 650;
+}
+
+.uploadFailed ul {
+  margin: 0 0 var(--space-3);
+  padding-left: var(--space-5);
+  overflow-wrap: anywhere;
+}
+
+.uploadFailedActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.group {
+  margin-bottom: var(--space-8);
+}
+
+.groupTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  padding-bottom: var(--space-2);
+  margin: 0 0 var(--space-3);
+  border-bottom: 2px solid var(--trip-ink, var(--border-strong));
+  font-size: var(--step-1);
+}
+
+.groupSub {
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+  font-weight: 500;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(140px, 30vw), 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.thumb {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background-color: var(--surface-2);
+  cursor: zoom-in;
+}
+
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--duration) var(--ease-out);
+}
+
+.thumb:hover img {
+  transform: scale(1.04);
+}
+
+.coverBadge {
+  position: absolute;
+  left: var(--space-1);
+  bottom: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  background-color: var(--surface);
+  color: var(--text);
+  font-size: var(--step--1);
+  font-weight: 700;
+}
+
+/* Viewer (native <dialog>) */
+.viewer {
+  width: min(100vw - 2 * var(--space-3), 1100px);
+  max-width: none;
+  max-height: calc(100dvh - 2 * var(--space-3));
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-raised);
+  color: var(--text);
+  box-shadow: var(--shadow-lg);
+}
+
+.viewer::backdrop {
+  background-color: var(--overlay);
+  backdrop-filter: blur(6px);
+}
+
+.viewerBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+}
+
+.viewerBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.viewerTitle {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+  color: var(--text-muted);
+}
+
+.viewerFigure {
+  margin: 0;
+}
+
+/* Sized from the photo's shape (--ratio = height / width) so the dialog
+   doesn't jump when the large image arrives. */
+.viewerStage {
+  position: relative;
+  display: grid;
+  grid-template: 100% / 100%; /* a definite area, so the image's max-height: 100% works */
+  place-items: center;
+  height: min(68dvh, calc((min(100vw, 1100px) - 3.5rem) * var(--ratio, 0.75)));
+  border-radius: var(--radius-md);
+  background-color: var(--surface-2);
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.viewerStage img {
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.navBtn {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background-color: var(--surface);
+  color: var(--text);
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: var(--shadow-1);
+}
+
+.navPrev {
+  left: var(--space-2);
+}
+
+.navNext {
+  right: var(--space-2);
+}
+
+.viewerCaption {
+  padding-top: var(--space-3);
+}
+
+.captionText {
+  margin: 0 0 var(--space-1);
+  font-size: var(--step-1);
+}
+
+.captionMeta {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--step--1);
+}
+
+.viewerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.viewerForm {
+  display: grid;
+  gap: var(--space-1);
+}

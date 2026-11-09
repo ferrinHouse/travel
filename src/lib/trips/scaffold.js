@@ -14,12 +14,12 @@ export function buildDays(start, end) {
 /**
  * What to change when a trip's dates change.
  *
- * `days`: the trip's current days as [{ id, dayNumber, dateLabel, activityCount, mealCount }].
+ * `days`: the trip's current days as [{ id, dayNumber, dateLabel, activityCount, mealCount, photoCount }].
  * Days keep their position: the first day stays the first day.
  * - Labels the app generated for the old date are regenerated; custom labels are kept.
  * - A longer trip gets new days at the end, numbered after the current last day.
  * - A shorter trip drops days from the end, but only empty ones. A day that still has
- *   activities or meals is returned in `blocked` and the caller must not apply the plan.
+ *   activities, meals or photos is returned in `blocked` and the caller must not apply the plan.
  *
  * → { create: [{ dayNumber, dateLabel }], update: [{ id, dateLabel }], remove: [id], blocked: [{ id, dayNumber, dateLabel }] }
  */
@@ -30,7 +30,7 @@ export function reconcileDays({ days, oldStart, newStart, newEnd }) {
 
   sorted.forEach((day, i) => {
     if (i >= length) {
-      if (day.activityCount > 0 || day.mealCount > 0) {
+      if (day.activityCount > 0 || day.mealCount > 0 || day.photoCount > 0) {
         plan.blocked.push({ id: day.id, dayNumber: day.dayNumber, dateLabel: day.dateLabel });
       } else {
         plan.remove.push(day.id);

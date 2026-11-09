@@ -32,13 +32,14 @@ A trip itinerary/logistics/packing/meal-planning app for the Ferrin household. F
 - `scripts/admin-reset.mjs` — lockout recovery (prints a one-time reset link); self-contained better-sqlite3, copied into the image
 - `prisma/seed.js` / `seed-meals.js` — demo data (they wipe the DB; `--force` required). Real trips are created in the app at `/trips/new`
 - `src/lib/trips/` — pure trip logic: `dates.js` (midnight-UTC calendar days, `formatDateRange`, `dayLabel`), `scaffold.js` (`buildDays`, `reconcileDays`: never drops a day with activities/meals, returns `blocked` instead), `slug.js`, `validation.js` (`validateTrip`, shared by the form and the API), `form.js`, `checklist-templates.js`. `src/lib/api/trips.js` uses them for create/edit/archive/delete and day titles
+- `src/lib/photos/` — scrapbook: `exif.js` (camera date from JPEG bytes, browser + Node), `assign-day.js` (photo → itinerary day by position), `validate.js` (type sniffing, size/HEIC errors), `process.js` (sharp: rotate, strip metadata, three sizes), `storage.js` (`<UPLOADS_DIR>/photos/<tripId>/<storageKey>/`, temp dir then rename), `upload.js`/`view.js` (browser helpers), `client-photo.js`. Handlers in `src/lib/api/photos.js` and `share.js`; UI in `src/components/trip/photos/` (tab, uploader, `<dialog>` viewer) and `src/components/story/` (story page, shared by `/trips/[id]/story` and `/share/[token]`)
 - `src/components/trips/` also holds `TripForm` (create + edit, live preview) and `TripDangerZone` (archive / delete with typed-name confirm); pages are `src/app/trips/new` and `src/app/trips/[id]/edit`
 
 ### Auth model
 
 Per-person accounts; **everything requires sign-in** (the proxy redirects pages to `/login`, API handlers return 401). Sign-in is username + password (scrypt) or a passkey (`@simplewebauthn/server`, injected as `ctx.webauthn` so tests use a fake). Sessions are a random token in the HTTP-only `travel_session` cookie (SameSite=Lax, 90-day max, 30 days idle); the DB stores only its SHA-256. Invite/reset links work the same way (single use, hashed).
 
-Roles in `src/lib/auth/roles.js` via `can(user, action)`: `viewer` → view; `member` → also `toggle` and `add-item` (checklist/grocery); `admin` → also `edit` and `manage-users`. On the trip page admins edit only with "Edit mode" on (`src/lib/trip-permissions.js`).
+Roles in `src/lib/auth/roles.js` via `can(user, action)`: `viewer` → view; `member` → also `toggle` and `add-item` (checklist/grocery) and `upload` (photos; members change or delete only their own, see `src/lib/photos/access.js`); `admin` → also `edit` and `manage-users`. On the trip page admins edit only with "Edit mode" on (`src/lib/trip-permissions.js`).
 
 First admin: set `SETUP_TOKEN` and use `/setup` (404 once any user exists). Production needs `APP_ORIGIN` (k8s `travel-config`); passkeys are bound to its hostname. Don't add OAuth/third-party identity without checking with the user first.
 
@@ -64,6 +65,9 @@ npm run seed:meals -- --force  # re-seed meal/grocery data (seed scripts wipe da
 - Client mutations go through `apiFetch` (`src/lib/api-client.js`) and report failures with `useToast()`; confirmations use `useConfirm()`, never `alert`/`confirm`.
 - Pure logic goes in `src/lib/*.js` with relative imports (no `@/`, no `next/*`) so `node --test` can load it; add a test in `tests/`.
 - Never enable SQLite WAL mode — production SQLite is on NFS.
+- `/share/<token>` (and `/api/share/…`) is the only signed-out content: it checks the share token itself and serves only the story and `sm`/`lg` photos, never logistics, checklists, meals or originals.
+- Photos: never trust an upload's name or Content-Type (`sniffImage`), never serve a file by a path from the request (look up the row, then `variantFile`), and keep metadata stripped (sharp drops it unless asked; don't call `withMetadata`). `route(handler, { upload: true })` gives handlers the raw body capped at `MAX_UPLOAD_MB`; file results (`{ status, file }`) are streamed. sharp's native files reach the standalone build only through `outputFileTracingIncludes` in `next.config.mjs`.
+- A day with photos (like one with activities or meals) blocks shortening a trip past it.
 - `Trip.id` is a human-readable slug, not a generated ID — keep using slugs if adding trip-scoped code. It is chosen once at creation and never changes; new reserved words for pages under `/trips/` go in `RESERVED_SLUGS` (`src/lib/trips/slug.js`).
 - Trip dates are midnight UTC; do date maths with `src/lib/trips/dates.js`, never local-time `Date` methods. A day's date is `startDate + position`, so there is no per-day date column. Meals link to days by `dayNumber`.
 

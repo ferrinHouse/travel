@@ -7,6 +7,7 @@ export const TABS = [
   { id: 'logistics', icon: '✈️', label: 'Logistics', short: 'Logistics' },
   { id: 'checklist', icon: '✅', label: 'Packing & Tasks', short: 'Packing' },
   { id: 'meals', icon: '🥣', label: 'Meals & Groceries', short: 'Meals' },
+  { id: 'photos', icon: '📷', label: 'Photos', short: 'Photos' },
 ];
 
 export const tabId = (id) => `trip-tab-${id}`;
