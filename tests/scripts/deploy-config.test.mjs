@@ -147,3 +147,23 @@ test('every workflow uses Node 24 versions of its actions', () => {
     assert.ok(major >= MIN_MAJOR[action], `${f}: ${action}@v${major} runs on Node 20 (need v${MIN_MAJOR[action]}+)`);
   }
 });
+
+// --- Start-up headroom. The entrypoint backs up the DB and runs `prisma db
+// push` before Next starts; at a 100m CPU cap that took ~2 minutes on the Pi,
+// the start-up probe killed the first attempt and the CI rollout timed out.
+const cpuMillis = (v) => (v.endsWith('m') ? Number(v.slice(0, -1)) : Number(v) * 1000);
+
+test('the CPU limit leaves room for start-up (backup + db push + Next boot)', () => {
+  const limits = deployment.slice(deployment.indexOf('limits:'));
+  const cpu = limits.match(/cpu:\s*"?([\d.]+m?)"?/)?.[1];
+  assert.ok(cpu, 'cpu limit missing');
+  assert.ok(cpuMillis(cpu) >= 500, `cpu limit ${cpu} is too low to start in time`);
+});
+
+test('every probe allows a slow health response (no 1s default timeout)', () => {
+  for (const probe of ['startupProbe', 'readinessProbe', 'livenessProbe']) {
+    const block = deployment.slice(deployment.indexOf(`${probe}:`)).split(/\n\s{10}\w+Probe:|\n\s{10}volumeMounts:/)[0];
+    const timeout = Number(block.match(/timeoutSeconds:\s*(\d+)/)?.[1] ?? 1);
+    assert.ok(timeout >= 5, `${probe} timeoutSeconds is ${timeout}`);
+  }
+});
