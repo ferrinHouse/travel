@@ -61,7 +61,7 @@ A modern, responsive travel companion and itinerary management web application b
 travel/
 ├── .github/
 │   └── workflows/
-│       ├── ci.yml               # Tests, then ARM64 Docker build, GHCR push & K8s rollout
+│       ├── ci.yml               # Tests ∥ ARM64 build, promote to :latest, K8s rollout
 │       └── test.yml             # Lint + all tests on every pull request
 ├── k8s/                         # Kubernetes deployment manifests
 │   ├── base/                    # Base Deployment, Service, and PVC definitions
@@ -262,8 +262,11 @@ kubectl rollout restart deployment/travel-site-deployment
 ### Continuous Integration & Deployment (CI/CD)
 
 The GitHub Actions workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) triggers on pushes to the `main` branch:
-1. **Build**: Builds an ARM64 container image using native `ubuntu-24.04-arm` runners and pushes to `ghcr.io/ferrinhouse/travel-site:latest` with GitHub Actions layer caching.
-2. **Deploy**: Runs on a self-hosted runner to apply Kubernetes manifests via `kubectl apply -k k8s` and triggers a zero-downtime rolling restart.
+1. **Test** and **Build** run in parallel: the full test suite (`test.yml`: lint, unit/API/script tests, e2e) alongside an ARM64 image build on native `ubuntu-24.04-arm` runners, pushed as `ghcr.io/ferrinhouse/travel-site:sha-<commit>` with GitHub Actions layer caching.
+2. **Promote**: only once both pass, the tested image is re-tagged `latest` in the registry (`docker buildx imagetools create`, no rebuild). The cluster pulls `latest` on every restart, so an untested image never gets that tag.
+3. **Deploy**: runs on a self-hosted runner to apply Kubernetes manifests via `kubectl apply -k k8s`, restarts the deployment and waits for the rollout.
+
+Rolling back is a re-tag of an earlier build: `docker buildx imagetools create --tag ghcr.io/ferrinhouse/travel-site:latest ghcr.io/ferrinhouse/travel-site:sha-<older-commit>`, then `kubectl rollout restart deployment/travel-site-deployment`.
 
 ---
 
