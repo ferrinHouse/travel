@@ -8,6 +8,8 @@ import FeaturedTrip from '@/components/trips/FeaturedTrip';
 import { requirePageUser } from '@/lib/auth/current-user';
 import styles from '@/components/trips/trips.module.css';
 import { photoUrl } from '@/lib/photos/view';
+import { shouldAutoSave } from '@/lib/offline/state';
+import AutoSaveTrips from '@/components/offline/AutoSaveTrips';
 
 const coverOf = (trip) => (trip.photos?.[0] ? photoUrl(trip.photos[0], 'lg') : undefined);
 
@@ -45,6 +47,10 @@ export default async function DashboardPage() {
     .filter((t) => t.status.phase === 'past')
     .sort((a, b) => time(b.trip.endDate) - time(a.trip.endDate));
   const [featured, ...later] = upcoming;
+  // Under way or starting soon: kept on the device for use without a signal.
+  const autoSave = upcoming
+    .filter((t) => shouldAutoSave(t.status))
+    .map(({ trip }) => ({ id: trip.id, name: trip.name, dates: trip.dates ?? '', photos: trip.photos.map((p) => ({ id: p.id, isCover: true })) }));
 
   return (
     <>
@@ -55,6 +61,7 @@ export default async function DashboardPage() {
         </div>
       </header>
 
+      <AutoSaveTrips trips={autoSave} />
       <main className="container">
         <section className="section" aria-labelledby="upcoming-title">
           <div className={styles.sectionHead}>

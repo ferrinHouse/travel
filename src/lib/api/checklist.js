@@ -1,10 +1,10 @@
 import { badRequest, isId, isObject, notFound, ok, text, tripExists } from './run.js';
-import { deny } from './guard.js';
+import { deny, wrongPerson } from './guard.js';
 
 /**
  * POST /api/checklist does three things:
  *  - no `id`: create an item (member)
- *  - `isCompleted`: tick/untick (member)
+ *  - `isCompleted`: tick/untick (member; `queuedBy` when sent from the offline outbox)
  *  - `text`: rename (admin)
  */
 export async function saveChecklistItem(ctx) {
@@ -24,7 +24,7 @@ export async function saveChecklistItem(ctx) {
     return ok({ item });
   }
 
-  const denied = deny(ctx, body.text !== undefined ? 'edit' : 'toggle');
+  const denied = deny(ctx, body.text !== undefined ? 'edit' : 'toggle') ?? wrongPerson(ctx);
   if (denied) return denied;
   if (!isId(body.id)) return badRequest();
 

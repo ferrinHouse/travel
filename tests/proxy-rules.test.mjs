@@ -9,8 +9,14 @@ describe('isPublicPath', () => {
     }
   });
 
+  test('the app shell is open: installing and the offline page work before sign-in', () => {
+    for (const path of ['/sw.js', '/sw-core.js', '/manifest.webmanifest', '/offline', '/icons/icon-192.png', '/icon.svg', '/apple-icon.png']) {
+      assert.equal(isPublicPath(path), true, path);
+    }
+  });
+
   test('everything else needs a session', () => {
-    for (const path of ['/', '/trips/chicago', '/account', '/admin/users', '/loginx', '/invite', '/share', '/trips/x/story', '/api/photos/1/sm', '/setup-wizard', '/api/checklist']) {
+    for (const path of ['/', '/trips/chicago', '/account', '/admin/users', '/loginx', '/invite', '/share', '/trips/x/story', '/api/photos/1/sm', '/setup-wizard', '/api/checklist', '/offline/x', '/icons', '/sw.jsx']) {
       assert.equal(isPublicPath(path), false, path);
     }
   });

@@ -4,6 +4,7 @@ import { useId, useState } from 'react';
 import { GROCERY_BASE, groceryCategoriesInUse, groceryCategoryOptions } from '@/lib/categories';
 import { apiFetch } from '@/lib/api-client';
 import { useToast } from '@/components/ui/Toast';
+import { saveTick } from '@/components/offline/outbox';
 import { useTrip } from '../TripContext';
 import styles from '../trip.module.css';
 
@@ -20,7 +21,8 @@ export default function GroceryList() {
     const next = !item.isBought;
     dispatch({ type: 'grocery/patch', id: item.id, patch: { isBought: next } });
     try {
-      await apiFetch('/api/grocery', { method: 'POST', body: { id: item.id, isBought: next } });
+      // Kept on the device and sent later when there's no connection.
+      await saveTick({ kind: 'grocery', id: item.id, tripId: trip.id, value: next, label: item.name });
     } catch (err) {
       dispatch({ type: 'grocery/patch', id: item.id, patch: { isBought: !next } });
       toast.error(`Couldn't update “${item.name}”: ${err.message}`);

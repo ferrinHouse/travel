@@ -4,6 +4,7 @@ import { useId, useState } from 'react';
 import { checklistLabel } from '@/lib/categories';
 import { apiFetch } from '@/lib/api-client';
 import { useToast } from '@/components/ui/Toast';
+import { saveTick } from '@/components/offline/outbox';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { useTrip } from '../TripContext';
 import ChecklistItemRow from './ChecklistItemRow';
@@ -22,7 +23,8 @@ export default function ChecklistCategory({ category, items }) {
     const next = !item.isCompleted;
     dispatch({ type: 'checklist/patch', id: item.id, patch: { isCompleted: next } });
     try {
-      await apiFetch('/api/checklist', { method: 'POST', body: { id: item.id, isCompleted: next } });
+      // Kept on the device and sent later when there's no connection.
+      await saveTick({ kind: 'checklist', id: item.id, tripId: trip.id, value: next, label: item.text });
     } catch (err) {
       dispatch({ type: 'checklist/patch', id: item.id, patch: { isCompleted: !next } });
       toast.error(`Couldn't update “${item.text}”: ${err.message}`);

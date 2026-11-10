@@ -32,6 +32,16 @@ describe('toggleGroceryItem', () => {
     assert.equal(res.body.item.isBought, false);
   });
 
+  test('a tick queued offline must come from the person now signed in', async () => {
+    const milk = trip.groceries.find((g) => g.name === 'Milk');
+    const user = actor('member');
+    const own = await runHandler(toggleGroceryItem, { db: db.prisma, user, body: { id: milk.id, isBought: true, queuedBy: `u${user.id}` } });
+    assert.equal(own.status, 200);
+    const other = await runHandler(toggleGroceryItem, member({ id: milk.id, isBought: false, queuedBy: 'u999999' }));
+    assert.equal(other.status, 409);
+    assert.equal((await db.prisma.groceryItem.findUnique({ where: { id: milk.id } })).isBought, true);
+  });
+
   test('validates input and 404s unknown items', async () => {
     const milk = trip.groceries.find((g) => g.name === 'Milk');
     assert.equal((await runHandler(toggleGroceryItem, member({ id: milk.id }))).status, 400);

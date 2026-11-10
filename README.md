@@ -46,6 +46,13 @@ A modern, responsive travel companion and itinerary management web application b
   - **Trip story** (`/trips/<id>/story`): the trip as a printable scrapbook, with each day's plans and photos. "Print or save as PDF" makes a keepsake.
   - **Share link** (off by default): from Trip settings, admins can make a read-only link to the story for people without an account. It shows only the story and photos (no logistics, checklists or meals), is hidden from search engines, and can be turned off or replaced any time.
 
+- **Works offline** (installable app):
+  - Add it to your phone's home screen ("Add to Home Screen" on iPhone, "Install app" on Android/desktop) and it opens like an app.
+  - Trips under way or starting within 30 days are saved on the device automatically when you open the dashboard; any other trip has a **Save for offline** button (it keeps the trip, its story and small copies of its photos). Pages you open are saved too.
+  - With no signal, saved trips open as normal and a strip under the header says you're offline. Anything not saved shows an offline page listing what is.
+  - Ticking packing or grocery items offline still works: the ticks are kept on the device (and survive closing the app), then sync when the connection comes back. Anything else needs a connection.
+  - Signing out removes the offline copies from the device (asking first if ticks haven't synced), and a different person signing in never sees or sends the previous person's.
+
 - **Family Accounts**:
   - Everyone signs in with their own username and a password or a **passkey** (Face ID, Touch ID, Windows Hello, Android screen lock). Nothing is visible without signing in.
   - **Viewer** sees everything; **Member** also ticks off and adds packing and grocery items and adds photos; **Admin** plans trips (behind an "Edit mode" switch) and manages people.
@@ -91,7 +98,10 @@ travel/
 │   ├── schema.prisma            # Prisma schema (Trips, Itineraries, Meals, Groceries, Checklists)
 │   ├── seed.js                  # Master seed script (Chicago, Boston, Hawaii, Sioux Falls, Southwest)
 │   └── seed-meals.js            # Detailed meal schedules and grocery lists
-├── public/                      # Static assets & favicon
+├── public/
+│   ├── sw.js                    # Service worker: saved pages, photos, offline fallback
+│   ├── sw-core.js               # Its rules (what is cached, how), tested in tests/sw-core.test.mjs
+│   └── icons/                   # App icons (made by scripts/make-icons.mjs)
 ├── src/
 │   ├── app/
 │   │   ├── api/                 # Next.js Route Handlers (REST endpoints)
@@ -110,10 +120,13 @@ travel/
 │   │   ├── trips/new/           # Plan a new trip (admins)
 │   │   ├── trips/[id]/          # Dynamic trip detail page with tabbed view; edit/ = trip settings; story/ = scrapbook
 │   │   ├── share/[token]/       # Read-only shared trip story
+│   │   ├── offline/             # Shown when a page isn't saved on the device
+│   │   ├── manifest.js          # /manifest.webmanifest (installable app)
 │   │   ├── layout.js            # Root HTML shell, fonts, metadata, no-flash theme script
 │   │   └── page.js              # Dashboard homepage (Upcoming & Past trips)
 │   ├── components/
 │   │   ├── site/                # Sticky site header + System/Light/Dark theme switch
+│   │   ├── offline/             # Worker registration, offline outbox, connection strip, Save for offline
 │   │   ├── trip/                # Trip detail page: tab shell + itinerary/logistics/checklist/meals/photos tabs
 │   │   ├── story/               # Trip story (scrapbook) used by the story and share pages
 │   │   ├── trips/               # Trip hero, dashboard cards, featured "next adventure", trip form, archive/delete
@@ -129,6 +142,7 @@ travel/
 │       ├── trip-reducer.js      # Pure reducer for trip page state
 │       ├── trips/               # Trip dates, day scaffolding/reconciling, slugs, form validation, starter checklist
 │       ├── photos/              # EXIF dates, day matching, upload checks, sharp resizing, file storage, view helpers
+│       ├── offline/             # Outbox rules (offline ticks) and which trips are kept offline
 │       └── api-client.js        # fetch wrapper that throws on API errors
 ├── tests/
 │   ├── *.test.mjs               # Unit tests for pure modules in src/lib
@@ -276,9 +290,9 @@ Handlers live in `src/lib/api/` and check permissions with `deny(ctx, action)`: 
 | `PATCH`/`DELETE` | `/api/photos` | Uploader or Admin | Caption / day (`isCover` is admin-only) / delete |
 | `GET` | `/api/photos/<id>/<size>` | Signed in | Photo file, size `sm`, `lg` or `orig` (`?download=1` for an attachment) |
 | `GET` | `/api/share/<token>/<id>/<size>` | Link holder | Photo file for a live share link (`sm` or `lg` only) |
-| `POST` | `/api/checklist` | Member | Tick an item, or add one; renaming needs Admin |
+| `POST` | `/api/checklist` | Member | Tick an item, or add one; renaming needs Admin. Ticks sent later from the offline outbox carry `queuedBy` and get a 409 if someone else is signed in |
 | `DELETE` | `/api/checklist` | Admin | Delete a checklist item |
-| `POST` | `/api/grocery` | Member | Tick a grocery item |
+| `POST` | `/api/grocery` | Member | Tick a grocery item (same `queuedBy` check as checklist ticks) |
 | `PUT` | `/api/grocery` | Member | Add a grocery item |
 | `POST`/`PUT`/`DELETE` | `/api/activities` | Admin | Update / create / delete an activity |
 | `POST`/`DELETE` | `/api/logistics` | Admin | Save / delete a logistics card |
@@ -337,6 +351,8 @@ The GitHub Actions workflow [`.github/workflows/ci.yml`](.github/workflows/ci.ym
 2. **Promote**: only once both pass, the tested image is re-tagged `latest` in the registry (`docker buildx imagetools create`, no rebuild). The cluster pulls `latest` on every restart, so an untested image never gets that tag.
 3. **Deploy**: runs on a self-hosted runner to apply Kubernetes manifests via `kubectl apply -k k8s`, restarts the deployment and waits for the rollout.
 
+Promoting retries up to three times, because GHCR occasionally reports a just-pushed image as missing for a few seconds.
+
 Rolling back is a re-tag of an earlier build: `docker buildx imagetools create --tag ghcr.io/ferrinhouse/travel-site:latest ghcr.io/ferrinhouse/travel-site:sha-<older-commit>`, then `kubectl rollout restart deployment/travel-site-deployment`.
 
 ---
@@ -355,7 +371,7 @@ The following features and architectural enhancements are planned for upcoming r
 - Done: photos by day, trip cover, printable trip story and optional share links. Still open: videos, and a storage-usage view for admins.
 
 ### 4. 📱 Offline Support & Progressive Web App (PWA)
-- Implement service workers and manifest caching so full itineraries, flight confirmations, hotel addresses, and packing lists remain accessible when traveling through areas with spotty cellular coverage (e.g., flights, cruises, national parks).
+- Done: installable app, trips saved for offline use (automatically for upcoming trips), offline packing and grocery ticks that sync later. Still open: offline edits beyond ticks (adding items, plans, meals), and push reminders.
 
 ### 5. 📅 Calendar & Navigation Integration
 - One-click `.ics` calendar export and Google Calendar synchronization for flights, reservations, and timed events.

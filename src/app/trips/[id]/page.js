@@ -5,6 +5,7 @@ import { tripTheme } from '@/lib/color';
 import { tripPhase } from '@/lib/trip-status';
 import TripHero from '@/components/trips/TripHero';
 import TripDetailsClient from '@/components/trip/TripDetailsClient';
+import SaveOffline from '@/components/offline/SaveOffline';
 import Link from 'next/link';
 import { can } from '@/lib/auth/roles';
 import { getCurrentUser, requirePageUser, clientUser } from '@/lib/auth/current-user';
@@ -71,6 +72,7 @@ export default async function TripDetailsPage({ params, searchParams }) {
             {can(user, 'edit') && <Link href={`/trips/${trip.id}/edit`}>Restore it</Link>}
           </p>
         )}
+        <SaveOffline trip={{ id: trip.id, name: trip.name, dates: trip.dates ?? '' }} photos={photos} />
         <TripDetailsClient
           initialTrip={clientTrip}
           initialTab={typeof tab === 'string' ? tab : undefined}
