@@ -22,21 +22,24 @@ describe('classify', () => {
     }
   });
 
-  test('the dashboard, trip pages and story pages are saved for offline', () => {
-    for (const p of ['/', '/trips/chicago', '/trips/chicago?tab=meals', '/trips/new-york-2027', '/trips/chicago/story']) {
+  test('the dashboard and trip pages are saved for offline', () => {
+    for (const p of ['/', '/trips/chicago', '/trips/chicago?tab=meals', '/trips/new-york-2027']) {
       assert.equal(kind(nav(p)), 'page', p);
     }
   });
 
   test('other pages load from the network only (offline page if that fails)', () => {
-    for (const p of ['/login', '/setup', '/account', '/admin/users', '/trips/new', '/trips/chicago/edit', '/invite/abc', '/share/abc', '/offline']) {
+    // The story page is mostly photos, which are never kept offline.
+    for (const p of ['/login', '/setup', '/account', '/admin/users', '/trips/new', '/trips/chicago/edit', '/trips/chicago/story', '/invite/abc', '/share/abc', '/offline']) {
       assert.equal(kind(nav(p)), 'navigate', p);
     }
   });
 
-  test('small and large photos are cached; originals and downloads never are', () => {
+  test('photos are never cached: sm/lg get a blank stand-in offline, the rest is untouched', () => {
     assert.equal(kind(req('/api/photos/12/sm')), 'photo');
     assert.equal(kind(req('/api/photos/12/lg')), 'photo');
+    assert.equal(SW.CACHES.photos, undefined);
+    assert.equal(SW.LIMITS.photos, undefined);
     assert.equal(kind(req('/api/photos/12/orig')), 'bypass');
     assert.equal(kind(req('/api/photos/12/lg?download=1')), 'bypass');
   });
@@ -125,23 +128,27 @@ describe('cache housekeeping', () => {
     assert.deepEqual(SW.staleCaches(['travel-static-v0', 'other-app', ...current]), ['travel-static-v0']);
   });
 
-  test('signing out clears saved pages and photos but keeps shared built files', () => {
-    assert.deepEqual(SW.PRIVATE_CACHES.sort(), [SW.CACHES.pages, SW.CACHES.photos].sort());
+  test('photos saved by the first version of the worker are deleted', () => {
+    assert.deepEqual(SW.staleCaches(['travel-photos-v1', ...Object.values(SW.CACHES)]), ['travel-photos-v1']);
+  });
+
+  test('signing out clears saved pages but keeps shared built files', () => {
+    assert.deepEqual(SW.PRIVATE_CACHES, [SW.CACHES.pages]);
     assert.ok(!SW.PRIVATE_CACHES.includes(SW.CACHES.static));
   });
 });
 
 describe('save requests', () => {
-  test('only our own pages and photo URLs are accepted from the page', () => {
+  test('only our own saved pages are accepted from the page, and never photos', () => {
     const clean = SW.cleanSaveRequest({
-      pages: ['/trips/chicago', '/account', 'https://evil.example/', '/trips/chicago', 42],
-      photos: ['/api/photos/1/sm', '/api/photos/2/lg', '/api/photos/3/orig', '/etc/passwd', null],
+      pages: ['/trips/chicago', '/trips/chicago/story', '/account', 'https://evil.example/', '/trips/chicago', 42],
+      photos: ['/api/photos/1/sm', '/api/photos/2/lg'],
     });
-    assert.deepEqual(clean, { pages: ['/trips/chicago'], photos: ['/api/photos/1/sm', '/api/photos/2/lg'] });
+    assert.deepEqual(clean, { pages: ['/trips/chicago'] });
   });
 
   test('a missing or odd payload saves nothing', () => {
-    assert.deepEqual(SW.cleanSaveRequest(undefined), { pages: [], photos: [] });
-    assert.deepEqual(SW.cleanSaveRequest({ pages: 'x' }), { pages: [], photos: [] });
+    assert.deepEqual(SW.cleanSaveRequest(undefined), { pages: [] });
+    assert.deepEqual(SW.cleanSaveRequest({ pages: 'x' }), { pages: [] });
   });
 });

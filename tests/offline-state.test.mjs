@@ -54,16 +54,8 @@ describe('parseSavedTrips', () => {
 });
 
 describe('tripSaveRequest', () => {
-  test('the trip page plus small copies of its photos and the large cover', () => {
-    const photos = [{ id: 1 }, { id: 2, isCover: true }];
-    assert.deepEqual(tripSaveRequest('chicago', photos), {
-      pages: ['/trips/chicago', '/trips/chicago/story'],
-      photos: ['/api/photos/1/sm', '/api/photos/2/sm', '/api/photos/2/lg'],
-    });
-  });
-
-  test('no photos, no cover', () => {
-    assert.deepEqual(tripSaveRequest('denver', []).photos, []);
+  test('just the trip page: no story page and no photos', () => {
+    assert.deepEqual(tripSaveRequest('chicago'), { pages: ['/trips/chicago'] });
   });
 });
 

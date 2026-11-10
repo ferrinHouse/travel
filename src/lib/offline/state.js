@@ -1,12 +1,10 @@
 // Pure rules for which trips are kept offline, and whose data the device holds.
-import { photoUrl } from '../photos/view.js';
 
 /** Trips starting within this many days (or under way) are saved automatically. */
 export const AUTO_SAVE_DAYS = 30;
 const REFRESH_MS = 12 * 60 * 60 * 1000;
 // A page rendered longer ago than this when it starts came from the saved copy.
 const SAVED_COPY_MS = 2 * 60 * 1000;
-const MAX_PHOTOS = 300;
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /** `status` is tripPhase(trip). */
@@ -37,14 +35,12 @@ export function parseSavedTrips(raw) {
   return trips;
 }
 
-/** What the service worker fetches to keep a trip offline. */
-export function tripSaveRequest(tripId, photos = []) {
-  const kept = photos.slice(0, MAX_PHOTOS);
-  const cover = photos.find((p) => p.isCover);
-  return {
-    pages: [`/trips/${tripId}`, `/trips/${tripId}/story`],
-    photos: [...kept.map((p) => photoUrl(p, 'sm')), ...(cover ? [photoUrl(cover, 'lg')] : [])],
-  };
+/**
+ * What the service worker fetches to keep a trip offline: the trip page only.
+ * Photos (and the story page, which is mostly photos) stay online-only.
+ */
+export function tripSaveRequest(tripId) {
+  return { pages: [`/trips/${tripId}`] };
 }
 
 /** Whose offline data this is: stored with the data, compared on each visit. */

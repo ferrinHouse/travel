@@ -9,8 +9,8 @@ import styles from './offline.module.css';
 
 const savedFormat = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 
-/** "Save for offline" on a trip page: keeps the trip, its story and photos on this device. */
-export default function SaveOffline({ trip, photos }) {
+/** "Save for offline" on a trip page: keeps the trip page (not its photos) on this device. */
+export default function SaveOffline({ trip }) {
   const toast = useToast();
   const supported = useBrowserFlag(offlineSupported);
   const entry = useSavedTrips()[trip.id];
@@ -21,7 +21,7 @@ export default function SaveOffline({ trip, photos }) {
   const save = async () => {
     setBusy(true);
     try {
-      const result = await saveTripOffline(trip, photos);
+      const result = await saveTripOffline(trip);
       const missed = result.failed.length;
       toast.success(missed ? `Saved for offline (${missed} ${missed === 1 ? 'item' : 'items'} couldn’t be saved)` : 'Saved for offline');
     } catch (err) {

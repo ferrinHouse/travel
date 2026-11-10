@@ -50,7 +50,7 @@ export default async function DashboardPage() {
   // Under way or starting soon: kept on the device for use without a signal.
   const autoSave = upcoming
     .filter((t) => shouldAutoSave(t.status))
-    .map(({ trip }) => ({ id: trip.id, name: trip.name, dates: trip.dates ?? '', photos: trip.photos.map((p) => ({ id: p.id, isCover: true })) }));
+    .map(({ trip }) => ({ id: trip.id, name: trip.name, dates: trip.dates ?? '' }));
 
   return (
     <>

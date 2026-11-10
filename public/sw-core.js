@@ -11,11 +11,13 @@
     shell: 'travel-shell-v1', // the offline page and its build files (never trimmed)
     static: 'travel-static-v1', // hashed build files, fonts, icons (shared by all users)
     pages: 'travel-pages-v1', // saved HTML pages (this person's data)
-    photos: 'travel-photos-v1', // sm/lg photo files (this person's data)
   };
+  // Photos are never kept on the device (a lot of space for little use
+  // offline). The first worker had a travel-photos-v1 cache; it is not in
+  // CACHES, so staleCaches() deletes it.
   // What signing out (or another person signing in) wipes.
-  var PRIVATE_CACHES = [CACHES.pages, CACHES.photos];
-  var LIMITS = { static: 400, pages: 60, photos: 500 };
+  var PRIVATE_CACHES = [CACHES.pages];
+  var LIMITS = { static: 400, pages: 60 };
   var OFFLINE_URL = '/offline';
   // Online but slow: after this long, show the saved copy instead.
   var NETWORK_TIMEOUT_MS = 10000;
@@ -23,8 +25,8 @@
   var STATIC_FILES = ['/favicon.ico', '/icon.svg', '/apple-icon.png'];
   var SLUG = '[a-z0-9]+(?:-[a-z0-9]+)*';
   // Pages that work from a saved copy. Editing, account and sign-in pages
-  // always need the network.
-  var SAVED_PAGES = [new RegExp('^/$'), new RegExp('^/trips/(?!new$)' + SLUG + '$'), new RegExp('^/trips/' + SLUG + '/story$')];
+  // always need the network, and so does the story page (it is mostly photos).
+  var SAVED_PAGES = [new RegExp('^/$'), new RegExp('^/trips/(?!new$)' + SLUG + '$')];
   var PHOTO = /^\/api\/photos\/\d+\/(sm|lg)$/;
 
   function isSavedPage(pathname) {
@@ -36,7 +38,8 @@
   /**
    * What the fetch handler does with a request:
    * 'static' cache-first, 'page' network-first with a saved copy,
-   * 'navigate' network with the offline page as fallback, 'photo' cache-first,
+   * 'navigate' network with the offline page as fallback, 'photo' network
+   * with a blank stand-in when offline (never cached),
    * 'bypass' leave it to the browser.
    */
   function classify(request, origin) {
@@ -107,15 +110,12 @@
       : [];
   }
 
-  /** A save request from a page, limited to our own saved pages and photos. */
+  /** A save request from a page, limited to our own saved pages. */
   function cleanSaveRequest(data) {
     var d = data || {};
     return {
       pages: strings(d.pages).filter(function (p) {
         return p.charAt(0) === '/' && p.charAt(1) !== '/' && isSavedPage(p);
-      }),
-      photos: strings(d.photos).filter(function (p) {
-        return PHOTO.test(p);
       }),
     };
   }

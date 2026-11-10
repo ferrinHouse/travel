@@ -48,7 +48,8 @@ A modern, responsive travel companion and itinerary management web application b
 
 - **Works offline** (installable app):
   - Add it to your phone's home screen ("Add to Home Screen" on iPhone, "Install app" on Android/desktop) and it opens like an app.
-  - Trips under way or starting within 30 days are saved on the device automatically when you open the dashboard; any other trip has a **Save for offline** button (it keeps the trip, its story and small copies of its photos). Pages you open are saved too.
+  - Trips under way or starting within 30 days are saved on the device automatically when you open the dashboard; any other trip has a **Save for offline** button. Pages you open are saved too.
+  - Only the pages are kept (itinerary, logistics, packing, meals), not photos or the trip story, so an offline trip takes very little space. Offline, photos show as blank spaces.
   - With no signal, saved trips open as normal and a strip under the header says you're offline. Anything not saved shows an offline page listing what is.
   - Ticking packing or grocery items offline still works: the ticks are kept on the device (and survive closing the app), then sync when the connection comes back. Anything else needs a connection.
   - Signing out removes the offline copies from the device (asking first if ticks haven't synced), and a different person signing in never sees or sends the previous person's.
@@ -99,7 +100,7 @@ travel/
 │   ├── seed.js                  # Master seed script (Chicago, Boston, Hawaii, Sioux Falls, Southwest)
 │   └── seed-meals.js            # Detailed meal schedules and grocery lists
 ├── public/
-│   ├── sw.js                    # Service worker: saved pages, photos, offline fallback
+│   ├── sw.js                    # Service worker: saved pages, offline fallback (photos are never cached)
 │   ├── sw-core.js               # Its rules (what is cached, how), tested in tests/sw-core.test.mjs
 │   └── icons/                   # App icons (made by scripts/make-icons.mjs)
 ├── src/

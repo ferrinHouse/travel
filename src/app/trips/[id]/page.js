@@ -72,7 +72,7 @@ export default async function TripDetailsPage({ params, searchParams }) {
             {can(user, 'edit') && <Link href={`/trips/${trip.id}/edit`}>Restore it</Link>}
           </p>
         )}
-        <SaveOffline trip={{ id: trip.id, name: trip.name, dates: trip.dates ?? '' }} photos={photos} />
+        <SaveOffline trip={{ id: trip.id, name: trip.name, dates: trip.dates ?? '' }} />
         <TripDetailsClient
           initialTrip={clientTrip}
           initialTab={typeof tab === 'string' ? tab : undefined}

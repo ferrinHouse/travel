@@ -158,7 +158,7 @@ describe('using the app offline', () => {
     await context.close();
   });
 
-  test('“Save for offline” keeps the trip, its story and photos, and says when', async () => {
+  test('“Save for offline” keeps the trip page (no photos) and says when', async () => {
     const { page, context } = await openTrip(app, { id: 'oldtown' });
     await workerReady(page);
     await page.getByRole('button', { name: /Save for offline/ }).click();
@@ -167,11 +167,21 @@ describe('using the app offline', () => {
     assert.equal(await page.getByRole('button', { name: /Update offline copy/ }).count(), 1);
     assert.deepEqual(Object.keys(await savedIndex(page)), ['oldtown']);
     const pages = await savedPages(page);
-    assert.ok(pages.includes('/trips/oldtown') && pages.includes('/trips/oldtown/story'), pages.join());
+    assert.deepEqual(pages, ['/trips/oldtown']);
+    const cacheNames = await page.evaluate(() => caches.keys());
+    assert.ok(!cacheNames.some((n) => n.includes('photo')), cacheNames.join());
 
     await context.setOffline(true);
-    await page.goto(`${app.baseURL}/trips/oldtown/story`);
+    await page.reload();
     await page.getByRole('heading', { level: 1, name: 'Oldtown Memories' }).waitFor();
+    // Photos aren't kept: offline they come back as a blank stand-in, not a broken image.
+    const photo = await page.evaluate(async () => {
+      const response = await fetch('/api/photos/1/sm');
+      return { status: response.status, type: response.headers.get('content-type') };
+    });
+    assert.deepEqual(photo, { status: 200, type: 'image/svg+xml' });
+    await page.goto(`${app.baseURL}/trips/oldtown/story`);
+    await page.getByRole('heading', { name: 'You’re offline' }).waitFor();
     await context.close();
   });
 

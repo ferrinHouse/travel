@@ -83,12 +83,9 @@ function setSavedTrips(trips) {
 export const storedUserKey = () => readStorage(USER_KEY);
 export const setStoredUserKey = (key) => writeStorage(USER_KEY, key);
 
-/**
- * Saves a trip's page, story and photos for offline use.
- * `trip` = { id, name, dates }, `photos` = client photos ({ id, isCover }).
- */
-export async function saveTripOffline(trip, photos = []) {
-  const result = await askWorker({ type: 'save', ...tripSaveRequest(trip.id, photos) });
+/** Saves a trip's page for offline use. `trip` = { id, name, dates }. */
+export async function saveTripOffline(trip) {
+  const result = await askWorker({ type: 'save', ...tripSaveRequest(trip.id) });
   if (!result?.ok) throw new Error(result?.error || 'The trip couldn’t be saved. Are you online?');
   setSavedTrips({ ...savedTrips(), [trip.id]: { name: trip.name, dates: trip.dates ?? '', savedAt: Date.now() } });
   return result;
@@ -102,13 +99,13 @@ export async function saveTripOffline(trip, photos = []) {
 export async function saveFirstPage() {
   if (!offlineSupported() || navigator.serviceWorker.controller) return;
   try {
-    await askWorker({ type: 'save', pages: [window.location.pathname], photos: [] });
+    await askWorker({ type: 'save', pages: [window.location.pathname] });
   } catch {
     // It will be saved on the next visit instead.
   }
 }
 
-/** Forgets this person's saved pages, photos and saved-trip list. */
+/** Forgets this person's saved pages and saved-trip list. */
 export async function forgetSavedPages() {
   setSavedTrips({});
   if (!offlineSupported()) return;

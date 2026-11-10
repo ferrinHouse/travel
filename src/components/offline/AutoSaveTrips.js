@@ -7,7 +7,7 @@ import { offlineSupported, saveTripOffline, savedTrips } from './worker';
 /**
  * On the dashboard: quietly keeps trips that are under way or coming up soon
  * saved for offline, refreshing each copy at most every 12 hours.
- * `trips` = [{ id, name, dates, photos }].
+ * `trips` = [{ id, name, dates }].
  */
 export default function AutoSaveTrips({ trips }) {
   const ids = trips.map((t) => t.id).join(',');
@@ -21,7 +21,7 @@ export default function AutoSaveTrips({ trips }) {
         if (cancelled || !navigator.onLine) return;
         if (!needsRefresh(savedTrips()[trip.id], Date.now())) continue;
         try {
-          await saveTripOffline(trip, trip.photos);
+          await saveTripOffline(trip);
         } catch {
           // Try again on the next visit.
         }

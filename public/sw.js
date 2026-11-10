@@ -2,14 +2,15 @@
  * Offline support for Family Travel Adventures.
  *
  * - Build files, fonts and icons: cache-first (their names change with every build).
- * - The dashboard, trip pages and story pages: network-first, falling back to the
- *   saved copy when offline (immediately) or when the network is very slow.
- * - Photos (sm/lg only): cache-first.
+ * - The dashboard and trip pages: network-first, falling back to the saved
+ *   copy when offline (immediately) or when the network is very slow.
+ * - Photos (sm/lg): never cached; offline they get a blank stand-in so saved
+ *   pages don't show broken images.
  * - Other pages: network, with /offline as the fallback.
  * - Everything else (API calls, sign-in, writes, RSC data): untouched.
  *
  * Pages ask the worker to save a trip ({type: 'save'}) and to forget this
- * person's pages and photos when they sign out ({type: 'clear'}); each reply
+ * person's pages when they sign out ({type: 'clear'}); each reply
  * goes back on the MessageChannel port the page sends.
  * The rules live in sw-core.js (tested in tests/sw-core.test.mjs).
  */
@@ -45,7 +46,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const kind = SW.classify(event.request, ORIGIN);
   if (kind === 'static') event.respondWith(cacheFirst(event, SW.CACHES.static, 'static', SW.LIMITS.static));
-  else if (kind === 'photo') event.respondWith(cacheFirst(event, SW.CACHES.photos, 'photo', SW.LIMITS.photos));
+  else if (kind === 'photo') event.respondWith(photoOrBlank(event.request));
   else if (kind === 'page') event.respondWith(savedPage(event));
   else if (kind === 'navigate') event.respondWith(networkOrOffline(event.request));
 });
@@ -58,6 +59,17 @@ self.addEventListener('message', (event) => {
   if (data.type === 'save') event.waitUntil(save(SW.cleanSaveRequest(data)).then(reply, fail));
   else if (data.type === 'clear') event.waitUntil(clearPrivate().then(() => reply({ ok: true }), fail));
 });
+
+// Transparent, so the space keeps its background colour.
+const BLANK_PHOTO = '<svg xmlns="http://www.w3.org/2000/svg" width="4" height="3" viewBox="0 0 4 3"/>';
+
+async function photoOrBlank(request) {
+  try {
+    return await fetch(request);
+  } catch {
+    return new Response(BLANK_PHOTO, { headers: { 'content-type': 'image/svg+xml', 'cache-control': 'no-store' } });
+  }
+}
 
 async function cacheFirst(event, cacheName, kind, limit) {
   const cache = await caches.open(cacheName);
@@ -122,11 +134,10 @@ async function saveShell() {
   await saveAssets(cache, SW.assetsIn(html));
 }
 
-/** Saves pages (with the build files they use) and photos for offline use. */
-async function save({ pages, photos }) {
+/** Saves pages (with the build files they use) for offline use. */
+async function save({ pages }) {
   const failed = [];
   let savedPages = 0;
-  let savedPhotos = 0;
   const pageCache = await caches.open(SW.CACHES.pages);
   const staticCache = await caches.open(SW.CACHES.static);
   for (const page of pages) {
@@ -142,24 +153,9 @@ async function save({ pages, photos }) {
     }
   }
 
-  const photoCache = await caches.open(SW.CACHES.photos);
-  for (const photo of photos) {
-    try {
-      if (!(await photoCache.match(photo))) {
-        const response = await fetch(photo, { credentials: 'same-origin' });
-        if (!SW.isCacheable(response, 'photo')) throw new Error(`HTTP ${response.status}`);
-        await photoCache.put(photo, response);
-      }
-      savedPhotos += 1;
-    } catch {
-      failed.push(photo);
-    }
-  }
-
   await trim(pageCache, SW.LIMITS.pages);
   await trim(staticCache, SW.LIMITS.static);
-  await trim(photoCache, SW.LIMITS.photos);
-  return { ok: savedPages === pages.length, pages: savedPages, photos: savedPhotos, failed };
+  return { ok: savedPages === pages.length, pages: savedPages, failed };
 }
 
 async function saveAssets(cache, assets) {
