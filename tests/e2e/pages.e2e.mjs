@@ -58,6 +58,9 @@ describe('not found pages', () => {
     const page = await context.newPage();
     const res = await page.goto(`${app.baseURL}/trips/atlantis`);
     assert.equal(res.status(), 404);
+    // notFound() in this dynamic route comes back as a 404 whose body React
+    // renders in the browser, so the heading can appear just after "load".
+    await page.getByRole('heading', { name: 'Trip not found' }).waitFor();
     assert.equal(await page.getByRole('heading', { name: 'Trip not found' }).count(), 1);
     await page.getByRole('link', { name: 'Back to Adventures' }).click();
     await page.waitForURL(`${app.baseURL}/`);
