@@ -32,6 +32,23 @@ describe('saveChecklistItem: toggling', () => {
     assert.equal(res.body.item.isCompleted, false);
   });
 
+  test('a tick queued offline is accepted from the person who made it', async () => {
+    const user = actor('member');
+    const res = await runHandler(saveChecklistItem, { db: db.prisma, user, body: { id: item('Sunscreen').id, isCompleted: true, queuedBy: `u${user.id}` } });
+    assert.equal(res.status, 200);
+    assert.equal(res.body.item.isCompleted, true);
+  });
+
+  test('409 for a tick queued offline by someone else on the device', async () => {
+    const sunscreen = item('Sunscreen');
+    const res = await runHandler(saveChecklistItem, member({ id: sunscreen.id, isCompleted: true, queuedBy: 'u999999' }));
+    assert.equal(res.status, 409);
+    assert.match(res.body.message, /someone else/);
+    const unchanged = await db.prisma.checklistItem.findUnique({ where: { id: sunscreen.id } });
+    assert.equal(unchanged.isCompleted, false);
+    assert.equal((await runHandler(saveChecklistItem, member({ id: sunscreen.id, isCompleted: true, queuedBy: 7 }))).status, 400);
+  });
+
   test('404 for an unknown item', async () => {
     const res = await runHandler(saveChecklistItem, member({ id: 999999, isCompleted: true }));
     assert.equal(res.status, 404);

@@ -129,7 +129,7 @@ describe('the photo viewer', () => {
     await second.getByRole('button', { name: 'Edit caption & day' }).click();
     await second.getByLabel('Caption').fill('Lighthouse at noon');
     await second.getByLabel('Day').selectOption({ label: 'Day 1: Arrival' });
-    await second.getByRole('button', { name: 'Save' }).click();
+    await second.getByRole('button', { name: 'Save', exact: true }).click();
     await waitForToast(page, /Photo updated/);
     await second.getByText('Lighthouse at noon').waitFor();
 

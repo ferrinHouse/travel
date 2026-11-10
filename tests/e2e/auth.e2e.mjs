@@ -242,7 +242,7 @@ describe('passkeys', () => {
     assert.equal(await app.prisma.passkey.count({ where: { userId: app.users.member.id } }), 1);
     await page.getByRole('button', { name: /^Rename / }).click();
     await page.getByLabel('Passkey name').fill('Test laptop');
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
     await page.getByText('🔑 Test laptop').waitFor();
 
     // 1) The button. Autofill is switched off on this page so it can't jump in first.

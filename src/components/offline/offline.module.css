@@ -1,0 +1,103 @@
+/* Connection strip under the site header */
+.statusRegion:empty {
+  display: none;
+}
+
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  max-width: var(--content-max);
+  margin: var(--space-3) auto 0;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+  color: var(--text);
+}
+
+.status[data-offline] {
+  border-color: var(--warning);
+  background-color: var(--warning-bg);
+}
+
+.statusText {
+  margin: 0;
+  font-size: var(--step--1);
+}
+
+@media (max-width: 720px) {
+  .status {
+    margin-inline: var(--gutter);
+  }
+}
+
+/* Phones: the trip tabs move to the bottom, so the strip can stay in view
+   under the header (a tick made offline should say it's waiting). */
+@media (max-width: 640px) {
+  .statusRegion {
+    position: sticky;
+    top: var(--site-header-h);
+    z-index: calc(var(--z-header) - 1);
+  }
+
+  .status {
+    margin-top: var(--space-2);
+    box-shadow: var(--shadow-1);
+  }
+}
+
+/* Save for offline (trip page) */
+.save {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin: 0 0 var(--space-5);
+  color: var(--text-muted);
+  font-size: var(--step--1);
+}
+
+/* Saved trips on the offline page */
+.savedList {
+  display: grid;
+  gap: var(--space-2);
+  width: min(100%, 28rem);
+  margin: var(--space-5) auto var(--space-5);
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.savedLink {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.savedLink:hover {
+  border-color: var(--accent);
+}
+
+.savedName {
+  font-weight: 650;
+}
+
+.savedMeta {
+  color: var(--text-muted);
+  font-size: var(--step--1);
+}
+
+@media print {
+  .statusRegion,
+  .save {
+    display: none;
+  }
+}

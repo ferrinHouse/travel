@@ -120,6 +120,13 @@ test('latest is promoted only after both tests and build pass', () => {
   assert.match(promote, /travel-site:sha-\$\{\{ github\.sha \}\}/);
 });
 
+test('promoting retries, since GHCR can briefly miss a just-pushed manifest', () => {
+  const promote = job('promote');
+  assert.match(promote, /for attempt in 1 2 3/);
+  assert.match(promote, /sleep \$\(\(attempt \* 15\)\)/);
+  assert.match(promote, /exit 1/);
+});
+
 test('deploy waits for the promoted image', () => {
   assert.deepEqual(needs('deploy'), ['promote']);
   assert.match(deployment, /image: ghcr\.io\/ferrinhouse\/travel-site:latest/);
@@ -209,4 +216,30 @@ test('the image has a writable uploads folder and a working sharp', () => {
 test('the standalone build ships sharp’s native libvips files (the tracer can’t see them)', () => {
   const nextConfig = read('next.config.mjs');
   assert.match(nextConfig, /outputFileTracingIncludes:\s*\{[\s\S]*'\/api\/photos':\s*\[[^\]]*'\.\/node_modules\/@img\/\*\*\/\*'/);
+});
+
+// --- Offline app: the service worker must never be cached by the browser or a
+// proxy (or updates stall), and every page gets the baseline security headers.
+const routeHeaders = async (source) => {
+  const { default: config } = await import('../../next.config.mjs');
+  const rule = (await config.headers()).find((r) => r.source === source);
+  assert.ok(rule, `no headers for ${source}`);
+  return Object.fromEntries(rule.headers.map((h) => [h.key, h.value]));
+};
+
+test('the service worker and its helper are served uncached as JavaScript', async () => {
+  for (const file of ['/sw.js', '/sw-core.js']) {
+    const h = await routeHeaders(file);
+    assert.equal(h['Cache-Control'], 'no-cache, no-store, must-revalidate', file);
+    assert.equal(h['Content-Type'], 'application/javascript; charset=utf-8', file);
+    assert.match(h['Content-Security-Policy'], /script-src 'self'/, file);
+  }
+});
+
+test('every route sends nosniff, no framing and a strict referrer policy', async () => {
+  const h = await routeHeaders('/:path*');
+  assert.equal(h['X-Content-Type-Options'], 'nosniff');
+  assert.equal(h['X-Frame-Options'], 'DENY');
+  assert.equal(h['Referrer-Policy'], 'strict-origin-when-cross-origin');
+  assert.match(h['Permissions-Policy'], /camera=\(\)/);
 });

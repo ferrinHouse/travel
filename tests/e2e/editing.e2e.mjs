@@ -76,7 +76,7 @@ describe('itinerary editing', () => {
     await activityRow(page, 'Museum visit').getByRole('button', { name: 'Edit' }).click();
     await page.getByLabel('Description').fill('Science museum');
     await page.getByLabel('Time').fill('9:30 AM');
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
     await activityRow(page, 'Science museum').waitFor();
     assert.equal(await activityRow(page, 'Science museum').locator('.activity-time').innerText(), '9:30 AM');
     assert.ok(await app.prisma.itineraryActivity.findFirst({ where: { description: 'Science museum', time: '9:30 AM' } }));

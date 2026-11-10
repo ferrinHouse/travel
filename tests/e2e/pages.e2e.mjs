@@ -58,6 +58,9 @@ describe('not found pages', () => {
     const page = await context.newPage();
     const res = await page.goto(`${app.baseURL}/trips/atlantis`);
     assert.equal(res.status(), 404);
+    // notFound() in this dynamic route comes back as a 404 whose body React
+    // renders in the browser, so the heading can appear just after "load".
+    await page.getByRole('heading', { name: 'Trip not found' }).waitFor();
     assert.equal(await page.getByRole('heading', { name: 'Trip not found' }).count(), 1);
     await page.getByRole('link', { name: 'Back to Adventures' }).click();
     await page.waitForURL(`${app.baseURL}/`);
@@ -188,25 +191,29 @@ describe('member checkbox toggling', () => {
     await context.close();
   });
 
-  test('a failed checklist save rolls the checkbox back and shows an error', async () => {
+  // Network failures are kept and synced later (tests/e2e/offline.e2e.mjs);
+  // a refusal from the server rolls the tick back.
+  test('a checklist tick the server refuses rolls back and shows why', async () => {
     const { page, context } = await openTrip(app, { tab: 'checklist' });
-    await page.route('**/api/checklist', (route) => route.abort());
+    await page.route('**/api/checklist', (route) =>
+      route.fulfill({ status: 404, contentType: 'application/json', body: '{"success":false,"message":"Item not found"}' })
+    );
     const box = page.getByRole('checkbox', { name: 'Sunscreen' });
     await box.click();
     await page.getByText(/Couldn.t update “Sunscreen”/).waitFor();
     assert.equal(await box.isChecked(), false);
-    assert.match(await toastText(page), /Network error/);
+    assert.match(await toastText(page), /Item not found/);
     await context.close();
   });
 
-  test('a server error on a grocery tick also rolls back', async () => {
+  test('a bad grocery tick also rolls back', async () => {
     const { page, context } = await openTrip(app, { tab: 'meals' });
     await page.route('**/api/grocery', (route) =>
-      route.fulfill({ status: 500, contentType: 'application/json', body: '{"success":false,"message":"Server error"}' })
+      route.fulfill({ status: 400, contentType: 'application/json', body: '{"success":false,"message":"Bad request"}' })
     );
     const box = page.getByRole('checkbox', { name: 'Milk' });
     await box.click();
-    await page.getByText(/Couldn.t update “Milk”: Server error/).waitFor();
+    await page.getByText(/Couldn.t update “Milk”: Bad request/).waitFor();
     assert.equal(await box.isChecked(), false);
     await context.close();
   });

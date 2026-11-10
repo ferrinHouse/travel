@@ -1,9 +1,11 @@
 'use client';
 
-import { useMemo, useReducer, useState } from 'react';
+import { useEffect, useMemo, useReducer, useState } from 'react';
 import { tripReducer } from '@/lib/trip-reducer';
 import { tripPermissions } from '@/lib/trip-permissions';
 import { useBrowserFlag } from '@/components/auth/useBrowserFlag';
+import { pendingTicks } from '@/components/offline/outbox';
+import { patchAction } from '@/lib/offline/outbox-core';
 import { TripProvider } from './TripContext';
 import TripTabs, { TABS, panelId, tabId } from './TripTabs';
 import EditModeBar from './EditModeBar';
@@ -32,6 +34,24 @@ export default function TripDetailsClient({ initialTrip, initialTab, defaultTab 
   const [activeTab, setActiveTab] = useState(
     TABS.some((t) => t.id === initialTab) ? initialTab : defaultTab
   );
+
+  useEffect(() => {
+    let cancelled = false;
+    pendingTicks(initialTrip.id).then((ops) => {
+      if (cancelled) return;
+      // Show ticks made offline that haven't synced yet.
+      for (const op of ops) dispatch(patchAction(op));
+      // A saved (offline) copy was rendered for the tab open when it was saved;
+      // follow the address instead.
+      const fromUrl = new URL(window.location.href).searchParams.get('tab');
+      if (fromUrl && TABS.some((t) => t.id === fromUrl)) setActiveTab(fromUrl);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // Once per page load; later ticks update the state directly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const changeTab = (id) => {
     setActiveTab(id);

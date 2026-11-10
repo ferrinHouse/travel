@@ -1,5 +1,5 @@
 import { badRequest, isId, isObject, notFound, ok, text, tripExists } from './run.js';
-import { deny } from './guard.js';
+import { deny, wrongPerson } from './guard.js';
 
 /** Members and admins mark items bought while shopping. */
 export async function toggleGroceryItem(ctx) {
@@ -7,6 +7,8 @@ export async function toggleGroceryItem(ctx) {
   if (denied) return denied;
   const { db, body } = ctx;
   if (!isObject(body) || !isId(body.id) || typeof body.isBought !== 'boolean') return badRequest();
+  const wrong = wrongPerson(ctx);
+  if (wrong) return wrong;
   const item = await db.groceryItem.update({ where: { id: body.id }, data: { isBought: body.isBought } });
   return ok({ item });
 }

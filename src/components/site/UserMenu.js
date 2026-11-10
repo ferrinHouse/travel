@@ -3,11 +3,15 @@
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 import { apiFetch } from '@/lib/api-client';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
+import { clearOutbox, pendingTicks } from '@/components/offline/outbox';
+import { forgetSavedPages, setStoredUserKey } from '@/components/offline/worker';
 import styles from './site.module.css';
 
 /** Avatar button with a small menu: account, people (admins) and sign out. */
 export default function UserMenu({ user }) {
   const ref = useRef(null);
+  const confirm = useConfirm();
 
   // Close when clicking elsewhere or pressing Escape.
   useEffect(() => {
@@ -27,8 +31,21 @@ export default function UserMenu({ user }) {
     };
   }, []);
 
+  // Signing out also removes this person's offline copies from the device.
   const signOut = async () => {
+    const waiting = (await pendingTicks()).length;
+    if (waiting) {
+      const ok = await confirm({
+        title: 'Sign out without syncing?',
+        message: `${waiting} ${waiting === 1 ? 'change' : 'changes'} made offline haven’t synced yet and will be lost.`,
+        confirmLabel: 'Sign out anyway',
+        danger: true,
+      });
+      if (!ok) return;
+    }
     try {
+      await Promise.all([forgetSavedPages(), clearOutbox()]);
+      setStoredUserKey(null);
       await apiFetch('/api/auth/logout', { method: 'POST', body: {} });
     } finally {
       window.location.assign('/login');
